@@ -2,7 +2,7 @@ library(tidyverse)
 library(janitor)
 library(broom)
 library(tidymodels)  # Includes the workflows package
-tidymodels_prefer()
+tidymodels::tidymodels_prefer()
 library(tidyverse)
 library(glue)
 library(themis)
@@ -16,6 +16,10 @@ library(textrecipes)
 library(bonsai)
 library(finetune)
 library(future)
+library(ggcorrplot)
+library(embed)
+
+
 
 options(
   pillar.advice = FALSE, 

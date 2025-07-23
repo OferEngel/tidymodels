@@ -1,0 +1,340 @@
+---
+title: UKHSA - Exercise v01
+author: "Ofer Engel"
+date: '`r Sys.Date()`'
+format: 
+   html:
+     theme: flatly
+     df-print: paged
+     toc-location: right
+     toc: true
+     code-fold: true
+     code-summary: "Show the code"
+editor_options: 
+  chunk_output_type: console
+---
+
+
+```{r}
+#| label: setup
+#| include: false
+#| warning: false
+#| echo: false
+
+rm(list = ls())
+source(here::here("bin", "lib.R"))
+
+# load data here
+df <- read_csv(
+  'https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2022/2022-11-22/museums.csv', 
+  show_col_types = FALSE
+  ) |> 
+  select(museum_id, Accreditation, Governance, Size,
+         Subject_Matter, Year_opened, Year_closed, Area_Deprivation_index) %>%
+  mutate(Year_opened = parse_number(Year_opened),
+         IsClosed = if_else(Year_closed == "9999:9999", "Open", "Closed")) %>%
+  select(-Year_closed) %>%
+  na.omit() %>%
+  mutate(across(where(is.character), as.factor)) %>%
+  mutate(museum_id = as.character(museum_id)) |> 
+  select(-museum_id) |> 
+  clean_names()
+
+
+df |> 
+  tabyl(accreditation)
+
+# baseline brier (lower is better!)
+pi_emp <- 0.415
+pi_emp * (1 - pi_emp)
+
+```
+
+
+## Some exploratory data analysis (EDA)
+
+Let's look at some distributions and correlations first
+
+```{r}
+df |> 
+  select(where(~ is.numeric(.x))) |> 
+  add_column(Status = df$accreditation) |> 
+  pivot_longer(seq(2)) |> 
+  ggplot(aes(value)) +
+  geom_histogram(bins = 20) +
+  facet_wrap(~name, scale = "free")
+
+df |> recipe(accreditation ~ ., data = _) |> 
+  step_other(all_nominal_predictors(), threshold = .1) |> 
+  step_dummy(all_nominal_predictors()) |> 
+  step_dummy(accreditation, one_hot = TRUE) |> 
+  prep() |> 
+  bake(df) |> 
+  cor_pmat() %>% 
+  ggcorrplot(
+    hc.order = TRUE, 
+    lab = TRUE,
+    type = "lower", 
+    insig = "blank"
+    ) +
+  labs(title = "Pairwise Correlations Training Set") 
+
+
+
+
+```
+
+
+Now let's look at some predictors
+
+
+```{r}
+
+df |> 
+  recipe(accreditation ~ ., data = _) |> 
+  step_other(all_nominal_predictors(), threshold = .1) |> 
+  step_dummy(all_nominal_predictors(), one_hot = TRUE) |> 
+  step_dummy(accreditation, one_hot = FALSE) |> 
+  prep() |> 
+  bake(df) |>  
+  get_cors("accreditation_Unaccredited")
+
+df |> 
+  recipe(accreditation ~ ., data = _) |> 
+  step_other(all_nominal_predictors(), threshold = .1) |> 
+  step_dummy(all_nominal_predictors(), one_hot = TRUE) |> 
+  step_dummy(accreditation, one_hot = FALSE) |> 
+  prep() |> 
+  bake(df) |>  
+  plot_cors("accreditation_Unaccredited")
+
+
+```
+
+
+
+## Modelling
+
+We will use just an xgboost model
+
+```{r}
+#| label: data splitting and recipe
+#| 
+set.seed(123)
+df_split <- df |> 
+  initial_split(strata = accreditation)
+df_train <- training(df_split)
+df_test <- testing(df_split)
+df_metrics <- metric_set(accuracy, roc_auc, mn_log_loss)
+
+set.seed(234)
+df_folds <- vfold_cv(df, v = 5, strata = accreditation)
+
+
+rec <- recipe(accreditation ~ ., data = df_train) %>%
+  step_lencode_glm(subject_matter, outcome = vars(accreditation)) %>%
+  step_dummy(all_nominal_predictors())  |> 
+  step_nzv(all_predictors()) 
+
+
+# rec |> 
+#    prep() |> 
+#    bake(new_data = NULL) |> 
+#    View()
+
+# rec |> 
+#   prep() |> 
+#   tidy(number = 1)
+
+
+```
+
+### My XGBOOST model
+
+Now let's build a tunable xgboost model specification, tuning a lot of the important model hyperparameters, and combine it with our feature engineering recipe in a workflow(). We can also create a custom xgb_grid to specify what parameters I want to try out, like not-too-small learning rate, avoiding tree stubs, etc. I chose this parameter grid to get reasonable performance in a reasonable amount of tuning time.
+
+```{r}
+
+xgb_spec <-
+  boost_tree(
+    trees = tune(),
+    min_n = tune(),
+    mtry = tune(),
+    learn_rate = tune()
+  ) %>%
+  set_engine("xgboost") %>%
+  set_mode("classification")
+
+xgb_wf <- workflow(rec, xgb_spec)
+
+```
+
+Now we can tune across the grid of parameters and our resamples. Since we are trying quite a lot of hyperparameter combinations, let’s use racing to quit early on clearly bad hyperparameter combinations. We won't actually run this though, only once. 
+
+
+```{r}
+#| eval: false
+
+library(finetune)
+library(future)
+plan(multisession)
+set.seed(345)
+xgb_rs <- tune_race_anova(
+  xgb_wf,
+  resamples = df_folds,
+  grid = 25,
+  metrics = df_metrics,
+  control = control_race(verbose_elim = TRUE)
+)
+xgb_rs
+
+# Watch the race
+plot_race(xgb_rs)
+xgb_rs |> 
+  collect_metrics() |> 
+  select(-.config)
+
+show_best(
+  xgb_rs, 
+  metric = "roc_auc"
+  )
+
+
+
+select_best(xgb_rs, metric = "accuracy") |> 
+  dput()
+
+xgb_res <- (
+  best_xgb_wf <- xgb_wf %>%
+    finalize_workflow(
+      select_best(xgb_rs, metric = "accuracy") 
+      )
+    ) %>%
+  fit_resamples(
+    df_folds, 
+    control = control_resamples(save_pred = TRUE),
+    metrics = metric_set(roc_auc, accuracy, sens, spec, brier_class)
+    ) 
+
+# The very best tuned model
+# # A tibble: 1 × 5
+#    mtry trees min_n learn_rate .config              
+#   <int> <int> <int>      <dbl> <chr>                
+# 1    11   584     8     0.0110 Preprocessor1_Model24
+
+```
+
+
+Now for the evaluation. We use `fit_resamples()` to fit the resamples with the numerically optimal result from the tuning set of models.
+
+```{r}
+
+best_xgb_wf <- xgb_wf |> 
+  update_model(
+      boost_tree(
+      trees = 584,
+      min_n = 8,
+      mtry = 11,
+      learn_rate = 0.0110069417125221
+    ) %>%
+    set_engine("xgboost") %>%
+    set_mode("classification")
+  )
+
+xgb_res <- best_xgb_wf |> 
+  fit_resamples(
+    df_folds, 
+    control = control_resamples(save_pred = TRUE),
+    metrics = metric_set(roc_auc, accuracy, sens, spec, brier_class)
+    ) 
+
+xgb_res |> 
+  collect_metrics() |> 
+  select(-.config)
+
+# # A tibble: 4 × 5
+#   .metric  .estimator  mean     n std_err
+#   <chr>    <chr>      <dbl> <int>   <dbl>
+# 1 accuracy binary     0.794     5 0.00216
+# 2 roc_auc  binary     0.879     5 0.00286
+# 3 sens     binary     0.776     5 0.00944
+# 4 spec     binary     0.806     5 0.00787
+# brier_class binary     0.140     5 0.00159
+
+
+
+xgb_res |> 
+  collect_predictions() |> 
+  select(-.config, -id) |> 
+  conf_mat(truth = accreditation, .pred_class) |> 
+  autoplot()
+
+xgb_res |> 
+  collect_predictions() |> 
+  select(-.config, -id) |> 
+  roc_curve(truth = accreditation, .pred_Accredited) |> 
+  autoplot()
+
+
+```
+
+
+## Fit last
+
+Now we train one last time with the train data and fit the test data using `last_fit()` to fit one final time to the training data and evaluate one final time on the testing data.
+
+
+```{r}
+#| label: last fit
+
+# Fit Last
+xgb_last <-
+  best_xgb_wf |> 
+  last_fit(
+    df_split, 
+    metrics = metric_set(roc_auc, accuracy, sens, spec, brier_class)
+    )
+
+xgb_last |> 
+  collect_metrics() |> 
+  select(-.config)
+# A tibble: 5 × 3
+#   .metric     .estimator .estimate
+#   <chr>       <chr>          <dbl>
+# 1 accuracy    binary         0.803
+# 2 sens        binary         0.786
+# 3 spec        binary         0.815
+# 4 roc_auc     binary         0.889
+# 5 brier_class binary         0.135
+
+xgb_last |> 
+  collect_predictions() |> 
+  tabyl(.pred_class, accreditation) |> 
+  adorn_percentages() |> 
+  adorn_pct_formatting()
+
+xgb_last |> 
+  collect_predictions() %>%
+  conf_mat(truth = accreditation, .pred_class) |> 
+  autoplot()
+
+
+collect_predictions(xgb_last) %>%
+  roc_curve(truth = accreditation, .pred_Accredited) |> 
+  autoplot()
+
+```
+
+
+### Feature importance
+
+Checking for feature importance
+
+```{r}
+
+library(vip)
+extract_workflow(xgb_last) %>%
+  extract_fit_parsnip() %>%
+  vip(geom = "point", num_features = 15) + 
+  theme(axis.text.y = element_text(size = 12))
+```
