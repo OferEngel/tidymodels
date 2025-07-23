@@ -1,0 +1,426 @@
+---
+title: Directly Standardized Mortality Rates of Covid-19 across US states
+author: "Ofer Engel"
+date: '`r Sys.Date()`'
+format: 
+   html:
+     theme: flatly
+     df-print: paged
+     toc-location: right
+     toc: true
+     code-fold: true
+     code-summary: "Show the code"
+editor_options: 
+  chunk_output_type: console
+---
+
+
+
+
+```{r}
+#| label: setup
+#| warning: false
+#| message: false
+#| echo: false
+
+
+knitr::opts_chunk$set(echo = TRUE)
+options(pillar.sigfig=6)
+
+library(tidyverse)
+library(PHEindicatormethods)
+
+# install.packages("remotes")
+# remotes::install_github("MatthewBJane/ThemePark")
+library(ThemePark)
+theme_set(theme_barbie())
+
+study_pop <-  read_csv("https://raw.githubusercontent.com/OferEngel/ims-tutorials-4-umcg/master/data/state_sex_age_covid.csv",  show_col_types = FALSE)
+
+redblue <-  read_csv("https://raw.githubusercontent.com/OferEngel/ims-tutorials-4-umcg/master/data/redblue.csv", show_col_types = FALSE)
+
+states_regions <- tibble(
+  Abb      = state.abb,
+  State    = state.name, 
+  Region   = state.region, 
+  Division = state.division
+) |> 
+  add_row(
+    Abb = "DC", 
+    State = "District of Columbia", 
+    Region = "Northeast", 
+    Division = "Middle Atlantic"
+  )
+
+
+
+```
+
+
+A Directly Standardized Rate ([DSR](https://fingertips.phe.org.uk/static-reports/public-health-technical-guidance/Standardisation/DSRs.html){target="_blank"}) is a statistical method used to compare rates, like disease incidence or mortality, between different populations by adjusting for differences in their age or other relevant characteristics. It involves applying the age-specific rates observed in a study population to a standard population with a known age distribution. 
+
+This report showcases the [`PHEindicatormethods` package](https://cran.r-project.org/web/packages/PHEindicatormethods/vignettes/Introduction_to_PHEindicatormethods.html){target="_blank"}, providing an application to compare between state mortality rates after adjusting for the distribution of age and sex. 
+
+## Loading the datasets
+
+First, we are going to load the datasets. The first dataset combines [population level data](https://www.census.gov/data/tables/time-series/demo/popest/2020s-state-detail.html){target="_blank"}  with covid mortality data from the [CDC webpage](https://data.cdc.gov/NCHS/Provisional-COVID-19-Deaths-by-Sex-and-Age/9bhg-hcku/explore/query/SELECT%0A%20%20%60data_as_of%60%2C%0A%20%20%60start_date%60%2C%0A%20%20%60end_date%60%2C%0A%20%20%60group%60%2C%0A%20%20%60year%60%2C%0A%20%20%60month%60%2C%0A%20%20%60state%60%2C%0A%20%20%60sex%60%2C%0A%20%20%60age_group%60%2C%0A%20%20%60covid_19_deaths%60%2C%0A%20%20%60total_deaths%60%2C%0A%20%20%60pneumonia_deaths%60%2C%0A%20%20%60pneumonia_and_covid_19_deaths%60%2C%0A%20%20%60influenza_deaths%60%2C%0A%20%20%60pneumonia_influenza_or_covid%60%2C%0A%20%20%60footnote%60%0AWHERE%0A%20%20%28%60start_date%60%20%3D%20%222020-01-01T00%3A00%3A00%22%20%3A%3A%20floating_timestamp%29%0A%20%20AND%20%28%28%60end_date%60%20%3D%20%222020-12-31T00%3A00%3A00%22%20%3A%3A%20floating_timestamp%29%0A%20%20%20%20%20%20%20%20%20AND%20caseless_one_of%28%60sex%60%2C%20%22Male%22%2C%20%22Female%22%29%29/page/filter){target="_blank"}. For each combination of state, sex and age_group, we have the number of deaths, the population in the state and the population for at the level of the entire country across states. 
+
+The second and the third datasets collect information about the political leanings of each state, and the geographical Region and Division associated with the state. 
+
+As an extra feature, for will be using the `Barbie` theme for our plots, this theme taken from [ThemePark](https://github.com/MatthewBJane/ThemePark){target="_blank"}.
+
+
+
+
+We can now go ahead and calculate the standardized population, which is going to be the entire population of the United States, divided into two strata of `Sex` and 11 strata of `age_group`. In total, we have 22 distinct strata. 
+
+```{r}
+#| label: standard population
+
+# The standard population is the population for each stratum of Sex and age group.
+stndrd_pop <- study_pop |> 
+  select(Sex, age_group, population) |> 
+  distinct()
+
+
+```
+
+::: panel-tabset
+
+
+
+## The study population
+
+The `study_pop` object shows the number of events (deaths), the population in each state and the population across states for each stratum of Sex and age.
+
+```{r}
+#| label: study_pop
+#| echo: false
+
+study_pop
+
+```
+
+
+## Standardized population
+
+The `stndrd_pop` object is a slice of the `study_pop` object, showing the population for each stratum of Sex and age group across the United states. This will also the standardized measure we will use when comparing the states to one another. 
+
+```{r}
+#| label: stndrd_pop
+#| echo: false
+
+stndrd_pop
+
+```
+
+## The red-blue states
+
+he `redblue` object shows the political affiliation of each state around the year 2020. Notice that political affiliation may change dramatically over the years. 
+
+```{r}
+#| label: redblue
+#| echo: false
+
+redblue
+
+```
+
+## The states regions
+
+he `states_regions` object shows maps states names to the regions and divisions. This will be useful for facetting. 
+
+```{r}
+#| label: states_regions
+#| echo: false
+
+states_regions
+
+```
+
+:::
+
+
+## Calculating the standardized mortality rate
+
+Finally, we can calculate the standardized mortality rate for each state. For each state, we calculate the expected mortality, if this stratum was adjusted to its relative size in the country, i.e., if the mortality rate for each stratum in the USA was identical to the mortality rate for the exact same stratum at the state level. 
+
+
+```{r}
+#| label: sdr
+#| warning: false
+
+sdr <- study_pop |> 
+  group_by(State) |> 
+  phe_dsr(
+    deaths,             # deaths at the state level
+    pop_state,          # pop size at the state level
+    stdpop =            # pop size at the USA level
+      stndrd_pop$population 
+    ) |> 
+  select(1:6) |> 
+  rename(
+    deaths = total_count, 
+    dsr_mort = value
+    ) |> 
+  ungroup()
+
+```
+
+
+```{r}
+#| label: sdr-show
+#| echo: false
+
+sdr
+
+```
+
+The `deaths` and `total_pop` columns shows the total number of deaths and the total population for each state. The `dsr_mort` shows the standardized death rate (out of 100,000) if the strata were to be appropriately standardized. 
+So for example, for the state of Alabama we would expect a death rate of 
+$$
+100,000 \cdot \frac{6709}{10040112} = 66.82 
+$$
+Or 66.82 deaths per 100k, but the standardized rate is 64.76 with a 95% confidence interval of 63.2 - 66.3 per 100k population. 
+
+## DSR by political affiliation
+
+We can now plot our results. First, let's see whether the political affiliation of the state appears to be associated with the direct standardized mortality rate?
+
+```{r}
+#| label: redblue-code
+
+# The first plot will show all states in one chart
+p1 <- sdr %>% 
+  left_join(redblue, by = "State") |> 
+  left_join(states_regions, by = "State") %>%  
+  mutate(State = fct_reorder(State, dsr_mort)) |> 
+  ggplot(
+    aes(
+      State, 
+      dsr_mort, 
+      ymin = lowercl, 
+      ymax = uppercl, 
+      color = redblue
+    )
+  ) + 
+  geom_errorbar(linewidth = 1) + 
+  scale_y_continuous(breaks = seq(10, 100, 10)) +
+  scale_x_discrete(
+    guide = guide_axis(n.dodge = 2)
+  ) +
+  coord_flip() + 
+  labs(
+    x = NULL, 
+    y = "DSR", 
+    title = "Direct standardized mortality rate", 
+    subtitle = "COVID-19 mortality per 100k", 
+    color = NULL
+    ) + 
+  scale_color_manual(
+    values = c(
+      "Democrat" = "blue", 
+      "Republican" = "red", 
+      "Swing State" = "grey"
+    )
+  ) + 
+  theme(
+    legend.position = "bottom"
+  ) 
+
+# The second plot will show facet the result by region
+p2 <- sdr %>% 
+  left_join(redblue, by = "State") |> 
+  left_join(states_regions, by = "State") %>%  
+  mutate(State = fct_reorder(State, dsr_mort)) |> 
+  ggplot(
+    aes(
+      State, 
+      dsr_mort, 
+      ymin = lowercl, 
+      ymax = uppercl, 
+      color = redblue
+    )
+  ) + 
+  geom_errorbar(linewidth = 1) + 
+  scale_y_continuous(breaks = seq(10, 100, 10)) +
+  facet_wrap(~Region, scales = "free" ) +
+  scale_x_discrete(
+    # guide = guide_axis(n.dodge = 2)
+  ) +
+  coord_flip() + 
+  labs(
+    x = NULL, 
+    y = "DSR", 
+    title = "Direct standardized mortality rate", 
+    subtitle = "COVID-19 mortality per 100k", 
+    color = NULL
+    ) + 
+  scale_color_manual(
+    values = c(
+      "Democrat" = "blue", 
+      "Republican" = "red", 
+      "Swing State" = "grey"
+    )
+  ) + 
+  theme(
+    legend.position = "bottom"
+  ) 
+
+```
+
+
+::: panel-tabset
+
+## Single chart
+
+```{r}
+#| label: redblue-p1
+#| echo: false
+#| fig-width: 10
+#| fig-height: 8
+#| fig-align: "center"
+
+p1
+
+```
+
+
+## Facetted by region
+
+
+```{r}
+#| label: redblue-p2
+#| echo: false
+#| fig-width: 10
+#| fig-height: 8
+#| fig-align: "center"
+
+p2
+
+```
+
+
+:::
+
+```{r}
+#| label: model-redblue-hide
+#| echo: false
+#| include: false
+
+sdr %>% 
+  left_join(redblue, by = "State") %>% 
+  lm(dsr_mort ~ redblue, data = .) %>% 
+  summary()
+
+```
+
+There is an obvious and significant difference in the standardized mortality rate, in fact, a difference of up to two orders of magnitude between states at the lower end of the mortality rate (like Hawaii and Vermont) and those at the higher rate (such as South- and North-Dakota). 
+
+There is no obvious association between mortality and political affiliation (though we might want to run a regression to test that out). 
+
+
+
+
+```{r}
+#| label: Geographical Division
+#| include: false
+#| echo: false
+#| fig-width: 10
+#| fig-height: 8
+#| fig-align: "center"
+
+### DSR by Geographical Division
+
+# Now let's try to explore whether there is any association between our DSR and geographical division?
+
+sdr %>% 
+  left_join(states_regions, by = "State") %>%  
+  mutate(State = fct_reorder(State, dsr_mort)) |> 
+  ggplot(
+    aes(
+      State, 
+      dsr_mort, 
+      ymin = lowercl, 
+      ymax = uppercl, 
+      color = Division
+    )
+  ) + 
+  geom_errorbar(linewidth = 1) + 
+  scale_y_continuous(breaks = seq(10, 100, 10)) +
+  scale_x_discrete(
+    guide = guide_axis(n.dodge = 2)
+  ) + 
+  coord_flip() + 
+  labs(
+    x = NULL, 
+    y = "DSR", 
+    title = "Direct standardized mortality rate", 
+    subtitle = "COVID-19 mortality per 100k", 
+    color = NULL 
+  ) + 
+  theme(
+    legend.position = "bottom"
+  ) 
+
+
+
+study_pop %>% 
+  summarise()
+
+
+sdr %>%  
+  left_join(redblue, by = "State") %>% 
+  left_join(states_regions, by = "State") %>%
+  lm(dsr_mort ~ Division + redblue , data = .) %>% 
+  summary()
+
+
+
+
+
+### Bringing it all together
+
+# Here is another way to visualise the data, using both political affiliation and geographical division. Which visualisation do you think works best?
+
+sdr %>% 
+  left_join(redblue, by = "State") |> 
+  left_join(states_regions, by = "State") %>%  
+  mutate(State = fct_reorder(State, dsr_mort)) |> 
+  ggplot(
+    aes(
+      State, 
+      dsr_mort, 
+      ymin = lowercl, 
+      ymax = uppercl, 
+      color = redblue
+    )
+  ) + 
+  geom_errorbar(linewidth = 1) + 
+  facet_wrap(~Division, scales = "free") +
+  scale_y_continuous(breaks = seq(10, 100, 10)) +
+  # scale_x_discrete(
+  #   guide = guide_axis(n.dodge = 2)
+  # ) + 
+  coord_flip() + 
+  labs(
+    x = NULL, 
+    y = "DSR", 
+    title = "Direct standardized mortality rate", 
+    subtitle = "COVID-19 mortality per 100k", 
+    color = NULL
+    ) + 
+  scale_color_manual(
+    values = c(
+      "Democrat" = "blue", 
+      "Republican" = "red", 
+      "Swing State" = "grey"
+    )
+  ) + 
+  theme_bw() + 
+  theme(
+    legend.position = "bottom"
+  ) 
+
+
+```

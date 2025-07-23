@@ -1,0 +1,799 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.6.42">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+<meta name="author" content="Ofer Engel">
+<meta name="dcterms.date" content="2025-07-23">
+
+<title>Directly Standardized Mortality Rates of Covid-19 across US states</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { display: inline-block; text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+</style>
+
+
+<script src="COVID-DSR_files/libs/clipboard/clipboard.min.js"></script>
+<script src="COVID-DSR_files/libs/quarto-html/quarto.js"></script>
+<script src="COVID-DSR_files/libs/quarto-html/popper.min.js"></script>
+<script src="COVID-DSR_files/libs/quarto-html/tippy.umd.min.js"></script>
+<script src="COVID-DSR_files/libs/quarto-html/anchor.min.js"></script>
+<link href="COVID-DSR_files/libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="COVID-DSR_files/libs/quarto-html/quarto-syntax-highlighting-2f5df379a58b258e96c21c0638c20c03.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="COVID-DSR_files/libs/bootstrap/bootstrap.min.js"></script>
+<link href="COVID-DSR_files/libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="COVID-DSR_files/libs/bootstrap/bootstrap-e64f0373aecd96a0501e06a3c6cba34c.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<link href="COVID-DSR_files/libs/pagedtable-1.1/css/pagedtable.css" rel="stylesheet">
+<script src="COVID-DSR_files/libs/pagedtable-1.1/js/pagedtable.js"></script>
+
+  <script src="https://cdnjs.cloudflare.com/polyfill/v3/polyfill.min.js?features=es6"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" type="text/javascript"></script>
+
+<script type="text/javascript">
+const typesetMath = (el) => {
+  if (window.MathJax) {
+    // MathJax Typeset
+    window.MathJax.typeset([el]);
+  } else if (window.katex) {
+    // KaTeX Render
+    var mathElements = el.getElementsByClassName("math");
+    var macros = [];
+    for (var i = 0; i < mathElements.length; i++) {
+      var texText = mathElements[i].firstChild;
+      if (mathElements[i].tagName == "SPAN") {
+        window.katex.render(texText.data, mathElements[i], {
+          displayMode: mathElements[i].classList.contains('display'),
+          throwOnError: false,
+          macros: macros,
+          fleqn: false
+        });
+      }
+    }
+  }
+}
+window.Quarto = {
+  typesetMath
+};
+</script>
+
+</head>
+
+<body>
+
+<div id="quarto-content" class="page-columns page-rows-contents page-layout-article">
+<div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+  <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">Table of contents</h2>
+   
+  <ul>
+  <li><a href="#loading-the-datasets" id="toc-loading-the-datasets" class="nav-link active" data-scroll-target="#loading-the-datasets">Loading the datasets</a></li>
+  <li><a href="#calculating-the-standardized-mortality-rate" id="toc-calculating-the-standardized-mortality-rate" class="nav-link" data-scroll-target="#calculating-the-standardized-mortality-rate">Calculating the standardized mortality rate</a></li>
+  <li><a href="#dsr-by-political-affiliation" id="toc-dsr-by-political-affiliation" class="nav-link" data-scroll-target="#dsr-by-political-affiliation">DSR by political affiliation</a></li>
+  </ul>
+</nav>
+</div>
+<main class="content" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title">Directly Standardized Mortality Rates of Covid-19 across US states</h1>
+</div>
+
+
+
+<div class="quarto-title-meta">
+
+    <div>
+    <div class="quarto-title-meta-heading">Author</div>
+    <div class="quarto-title-meta-contents">
+             <p>Ofer Engel </p>
+          </div>
+  </div>
+    
+    <div>
+    <div class="quarto-title-meta-heading">Published</div>
+    <div class="quarto-title-meta-contents">
+      <p class="date">July 23, 2025</p>
+    </div>
+  </div>
+  
+    
+  </div>
+  
+
+
+</header>
+
+
+<p>A Directly Standardized Rate (<a href="https://fingertips.phe.org.uk/static-reports/public-health-technical-guidance/Standardisation/DSRs.html" target="_blank">DSR</a>) is a statistical method used to compare rates, like disease incidence or mortality, between different populations by adjusting for differences in their age or other relevant characteristics. It involves applying the age-specific rates observed in a study population to a standard population with a known age distribution.</p>
+<p>This report showcases the <a href="https://cran.r-project.org/web/packages/PHEindicatormethods/vignettes/Introduction_to_PHEindicatormethods.html" target="_blank"><code>PHEindicatormethods</code> package</a>, providing an application to compare between state mortality rates after adjusting for the distribution of age and sex.</p>
+<section id="loading-the-datasets" class="level2">
+<h2 class="anchored" data-anchor-id="loading-the-datasets">Loading the datasets</h2>
+<p>First, we are going to load the datasets. The first dataset combines <a href="https://www.census.gov/data/tables/time-series/demo/popest/2020s-state-detail.html" target="_blank">population level data</a> with covid mortality data from the <a href="https://data.cdc.gov/NCHS/Provisional-COVID-19-Deaths-by-Sex-and-Age/9bhg-hcku/explore/query/SELECT%0A%20%20%60data_as_of%60%2C%0A%20%20%60start_date%60%2C%0A%20%20%60end_date%60%2C%0A%20%20%60group%60%2C%0A%20%20%60year%60%2C%0A%20%20%60month%60%2C%0A%20%20%60state%60%2C%0A%20%20%60sex%60%2C%0A%20%20%60age_group%60%2C%0A%20%20%60covid_19_deaths%60%2C%0A%20%20%60total_deaths%60%2C%0A%20%20%60pneumonia_deaths%60%2C%0A%20%20%60pneumonia_and_covid_19_deaths%60%2C%0A%20%20%60influenza_deaths%60%2C%0A%20%20%60pneumonia_influenza_or_covid%60%2C%0A%20%20%60footnote%60%0AWHERE%0A%20%20%28%60start_date%60%20%3D%20%222020-01-01T00%3A00%3A00%22%20%3A%3A%20floating_timestamp%29%0A%20%20AND%20%28%28%60end_date%60%20%3D%20%222020-12-31T00%3A00%3A00%22%20%3A%3A%20floating_timestamp%29%0A%20%20%20%20%20%20%20%20%20AND%20caseless_one_of%28%60sex%60%2C%20%22Male%22%2C%20%22Female%22%29%29/page/filter" target="_blank">CDC webpage</a>. For each combination of state, sex and age_group, we have the number of deaths, the population in the state and the population for at the level of the entire country across states.</p>
+<p>The second and the third datasets collect information about the political leanings of each state, and the geographical Region and Division associated with the state.</p>
+<p>As an extra feature, for will be using the <code>Barbie</code> theme for our plots, this theme taken from <a href="https://github.com/MatthewBJane/ThemePark" target="_blank">ThemePark</a>.</p>
+<p>We can now go ahead and calculate the standardized population, which is going to be the entire population of the United States, divided into two strata of <code>Sex</code> and 11 strata of <code>age_group</code>. In total, we have 22 distinct strata.</p>
+<div class="cell">
+<details class="code-fold">
+<summary>Show the code</summary>
+<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="co"># The standard population is the population for each stratum of Sex and age group.</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>stndrd_pop <span class="ot">&lt;-</span> study_pop <span class="sc">|&gt;</span> </span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(Sex, age_group, population) <span class="sc">|&gt;</span> </span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">distinct</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+</div>
+<div class="tabset-margin-container"></div><div class="panel-tabset">
+<ul class="nav nav-tabs" role="tablist"><li class="nav-item" role="presentation"><a class="nav-link active" id="tabset-1-1-tab" data-bs-toggle="tab" data-bs-target="#tabset-1-1" role="tab" aria-controls="tabset-1-1" aria-selected="true" href="">The study population</a></li><li class="nav-item" role="presentation"><a class="nav-link" id="tabset-1-2-tab" data-bs-toggle="tab" data-bs-target="#tabset-1-2" role="tab" aria-controls="tabset-1-2" aria-selected="false" href="">Standardized population</a></li><li class="nav-item" role="presentation"><a class="nav-link" id="tabset-1-3-tab" data-bs-toggle="tab" data-bs-target="#tabset-1-3" role="tab" aria-controls="tabset-1-3" aria-selected="false" href="">The red-blue states</a></li><li class="nav-item" role="presentation"><a class="nav-link" id="tabset-1-4-tab" data-bs-toggle="tab" data-bs-target="#tabset-1-4" role="tab" aria-controls="tabset-1-4" aria-selected="false" href="">The states regions</a></li></ul>
+<div class="tab-content">
+<div id="tabset-1-1" class="tab-pane active" role="tabpanel" aria-labelledby="tabset-1-1-tab">
+<p>The <code>study_pop</code> object shows the number of events (deaths), the population in each state and the population across states for each stratum of Sex and age.</p>
+<div class="cell">
+<div class="cell-output-display">
+<div data-pagedtable="false">
+  <script data-pagedtable-source="" type="application/json">
+{"columns":[{"label":["State"],"name":[1],"type":["chr"],"align":["left"]},{"label":["Sex"],"name":[2],"type":["chr"],"align":["left"]},{"label":["age_group"],"name":[3],"type":["chr"],"align":["left"]},{"label":["deaths"],"name":[4],"type":["dbl"],"align":["right"]},{"label":["pop_state"],"name":[5],"type":["dbl"],"align":["right"]},{"label":["population"],"name":[6],"type":["dbl"],"align":["right"]}],"data":[{"1":"Alabama","2":"Female","3":"0-.99 years","4":"0","5":"27808","6":"1809703"},{"1":"Alabama","2":"Female","3":"01-04 years","4":"0","5":"117523","6":"7620035"},{"1":"Alabama","2":"Female","3":"05-14 years","4":"0","5":"312194","6":"20518881"},{"1":"Alabama","2":"Female","3":"15-24 years","4":"6","5":"327964","6":"20981911"},{"1":"Alabama","2":"Female","3":"25-34 years","4":"17","5":"331118","6":"22449525"},{"1":"Alabama","2":"Female","3":"35-44 years","4":"54","5":"315683","6":"21276445"},{"1":"Alabama","2":"Female","3":"45-54 years","4":"168","5":"319255","6":"20563411"},{"1":"Alabama","2":"Female","3":"55-64 years","4":"369","5":"348430","6":"21973114"},{"1":"Alabama","2":"Female","3":"65-74 years","4":"676","5":"280443","6":"17208126"},{"1":"Alabama","2":"Female","3":"75-84 years","4":"859","5":"146371","6":"8832725"},{"1":"Alabama","2":"Female","3":"85 years and over","4":"996","5":"2640933","6":"171003046"},{"1":"Alabama","2":"Male","3":"0-.99 years","4":"0","5":"29226","6":"1893263"},{"1":"Alabama","2":"Male","3":"01-04 years","4":"0","5":"122764","6":"7968874"},{"1":"Alabama","2":"Male","3":"05-14 years","4":"0","5":"324987","6":"21520591"},{"1":"Alabama","2":"Male","3":"15-24 years","4":"7","5":"330155","6":"21603341"},{"1":"Alabama","2":"Male","3":"25-34 years","4":"30","5":"318853","6":"22791780"},{"1":"Alabama","2":"Male","3":"35-44 years","4":"73","5":"297320","6":"21420401"},{"1":"Alabama","2":"Male","3":"45-54 years","4":"211","5":"306071","6":"20492996"},{"1":"Alabama","2":"Male","3":"55-64 years","4":"530","5":"324680","6":"21075426"},{"1":"Alabama","2":"Male","3":"65-74 years","4":"993","5":"242723","6":"15361155"},{"1":"Alabama","2":"Male","3":"75-84 years","4":"1041","5":"110116","6":"6989539"},{"1":"Alabama","2":"Male","3":"85 years and over","4":"679","5":"2465495","6":"165470228"},{"1":"Alaska","2":"Female","3":"0-.99 years","4":"0","5":"4712","6":"1809703"},{"1":"Alaska","2":"Female","3":"01-04 years","4":"0","5":"19172","6":"7620035"},{"1":"Alaska","2":"Female","3":"05-14 years","4":"0","5":"49489","6":"20518881"},{"1":"Alaska","2":"Female","3":"15-24 years","4":"0","5":"41831","6":"20981911"},{"1":"Alaska","2":"Female","3":"25-34 years","4":"1","5":"52332","6":"22449525"},{"1":"Alaska","2":"Female","3":"35-44 years","4":"1","5":"46499","6":"21276445"},{"1":"Alaska","2":"Female","3":"45-54 years","4":"4","5":"39679","6":"20563411"},{"1":"Alaska","2":"Female","3":"55-64 years","4":"16","5":"44111","6":"21973114"},{"1":"Alaska","2":"Female","3":"65-74 years","4":"21","5":"30857","6":"17208126"},{"1":"Alaska","2":"Female","3":"75-84 years","4":"27","5":"11980","6":"8832725"},{"1":"Alaska","2":"Female","3":"85 years and over","4":"33","5":"348778","6":"171003046"},{"1":"Alaska","2":"Male","3":"0-.99 years","4":"0","5":"4880","6":"1893263"},{"1":"Alaska","2":"Male","3":"01-04 years","4":"0","5":"20437","6":"7968874"},{"1":"Alaska","2":"Male","3":"05-14 years","4":"0","5":"52554","6":"21520591"},{"1":"Alaska","2":"Male","3":"15-24 years","4":"0","5":"45083","6":"21603341"},{"1":"Alaska","2":"Male","3":"25-34 years","4":"0","5":"53736","6":"22791780"},{"1":"Alaska","2":"Male","3":"35-44 years","4":"3","5":"49838","6":"21420401"},{"1":"Alaska","2":"Male","3":"45-54 years","4":"9","5":"44844","6":"20492996"},{"1":"Alaska","2":"Male","3":"55-64 years","4":"16","5":"48580","6":"21075426"},{"1":"Alaska","2":"Male","3":"65-74 years","4":"45","5":"32980","6":"15361155"},{"1":"Alaska","2":"Male","3":"75-84 years","4":"46","5":"11416","6":"6989539"},{"1":"Alaska","2":"Male","3":"85 years and over","4":"26","5":"369454","6":"165470228"},{"1":"Arizona","2":"Female","3":"0-.99 years","4":"0","5":"37423","6":"1809703"},{"1":"Arizona","2":"Female","3":"01-04 years","4":"0","5":"160033","6":"7620035"},{"1":"Arizona","2":"Female","3":"05-14 years","4":"0","5":"447662","6":"20518881"},{"1":"Arizona","2":"Female","3":"15-24 years","4":"7","5":"462032","6":"20981911"},{"1":"Arizona","2":"Female","3":"25-34 years","4":"45","5":"472043","6":"22449525"},{"1":"Arizona","2":"Female","3":"35-44 years","4":"100","5":"436562","6":"21276445"},{"1":"Arizona","2":"Female","3":"45-54 years","4":"188","5":"420196","6":"20563411"},{"1":"Arizona","2":"Female","3":"55-64 years","4":"487","5":"453623","6":"21973114"},{"1":"Arizona","2":"Female","3":"65-74 years","4":"838","5":"405836","6":"17208126"},{"1":"Arizona","2":"Female","3":"75-84 years","4":"1033","5":"217431","6":"8832725"},{"1":"Arizona","2":"Female","3":"85 years and over","4":"1115","5":"3672895","6":"171003046"},{"1":"Arizona","2":"Male","3":"0-.99 years","4":"0","5":"38969","6":"1893263"},{"1":"Arizona","2":"Male","3":"01-04 years","4":"0","5":"167071","6":"7968874"},{"1":"Arizona","2":"Male","3":"05-14 years","4":"0","5":"467721","6":"21520591"},{"1":"Arizona","2":"Male","3":"15-24 years","4":"22","5":"485168","6":"21603341"},{"1":"Arizona","2":"Male","3":"25-34 years","4":"78","5":"501359","6":"22791780"},{"1":"Arizona","2":"Male","3":"35-44 years","4":"179","5":"454840","6":"21420401"},{"1":"Arizona","2":"Male","3":"45-54 years","4":"405","5":"422933","6":"20492996"},{"1":"Arizona","2":"Male","3":"55-64 years","4":"867","5":"427103","6":"21075426"},{"1":"Arizona","2":"Male","3":"65-74 years","4":"1305","5":"360556","6":"15361155"},{"1":"Arizona","2":"Male","3":"75-84 years","4":"1547","5":"190918","6":"6989539"},{"1":"Arizona","2":"Male","3":"85 years and over","4":"1098","5":"3630220","6":"165470228"},{"1":"Arkansas","2":"Female","3":"0-.99 years","4":"0","5":"17201","6":"1809703"},{"1":"Arkansas","2":"Female","3":"01-04 years","4":"0","5":"72833","6":"7620035"},{"1":"Arkansas","2":"Female","3":"05-14 years","4":"0","5":"194631","6":"20518881"},{"1":"Arkansas","2":"Female","3":"15-24 years","4":"3","5":"195384","6":"20981911"},{"1":"Arkansas","2":"Female","3":"25-34 years","4":"12","5":"195204","6":"22449525"},{"1":"Arkansas","2":"Female","3":"35-44 years","4":"25","5":"187190","6":"21276445"},{"1":"Arkansas","2":"Female","3":"45-54 years","4":"61","5":"180603","6":"20563411"},{"1":"Arkansas","2":"Female","3":"55-64 years","4":"195","5":"197506","6":"21973114"},{"1":"Arkansas","2":"Female","3":"65-74 years","4":"355","5":"162208","6":"17208126"},{"1":"Arkansas","2":"Female","3":"75-84 years","4":"548","5":"86884","6":"8832725"},{"1":"Arkansas","2":"Female","3":"85 years and over","4":"783","5":"1560200","6":"171003046"},{"1":"Arkansas","2":"Male","3":"0-.99 years","4":"0","5":"18147","6":"1893263"},{"1":"Arkansas","2":"Male","3":"01-04 years","4":"0","5":"76297","6":"7968874"},{"1":"Arkansas","2":"Male","3":"05-14 years","4":"0","5":"205262","6":"21520591"},{"1":"Arkansas","2":"Male","3":"15-24 years","4":"4","5":"202673","6":"21603341"},{"1":"Arkansas","2":"Male","3":"25-34 years","4":"17","5":"195214","6":"22791780"},{"1":"Arkansas","2":"Male","3":"35-44 years","4":"34","5":"187491","6":"21420401"},{"1":"Arkansas","2":"Male","3":"45-54 years","4":"108","5":"179153","6":"20492996"},{"1":"Arkansas","2":"Male","3":"55-64 years","4":"263","5":"188400","6":"21075426"},{"1":"Arkansas","2":"Male","3":"65-74 years","4":"475","5":"143924","6":"15361155"},{"1":"Arkansas","2":"Male","3":"75-84 years","4":"642","5":"69108","6":"6989539"},{"1":"Arkansas","2":"Male","3":"85 years and over","4":"505","5":"1505309","6":"165470228"},{"1":"California","2":"Female","3":"0-.99 years","4":"0","5":"212773","6":"1809703"},{"1":"California","2":"Female","3":"01-04 years","4":"0","5":"906062","6":"7620035"},{"1":"California","2":"Female","3":"05-14 years","4":"0","5":"2469899","6":"20518881"},{"1":"California","2":"Female","3":"15-24 years","4":"38","5":"2508562","6":"20981911"},{"1":"California","2":"Female","3":"25-34 years","4":"123","5":"2873678","6":"22449525"},{"1":"California","2":"Female","3":"35-44 years","4":"287","5":"2630034","6":"21276445"},{"1":"California","2":"Female","3":"45-54 years","4":"651","5":"2474475","6":"20563411"},{"1":"California","2":"Female","3":"55-64 years","4":"1487","5":"2442026","6":"21973114"},{"1":"California","2":"Female","3":"65-74 years","4":"2538","5":"1837094","6":"17208126"},{"1":"California","2":"Female","3":"75-84 years","4":"3557","5":"940987","6":"8832725"},{"1":"California","2":"Female","3":"85 years and over","4":"5208","5":"20159164","6":"171003046"},{"1":"California","2":"Male","3":"0-.99 years","4":"0","5":"223182","6":"1893263"},{"1":"California","2":"Male","3":"01-04 years","4":"0","5":"948895","6":"7968874"},{"1":"California","2":"Male","3":"05-14 years","4":"0","5":"2596923","6":"21520591"},{"1":"California","2":"Male","3":"15-24 years","4":"58","5":"2582187","6":"21603341"},{"1":"California","2":"Male","3":"25-34 years","4":"241","5":"3011355","6":"22791780"},{"1":"California","2":"Male","3":"35-44 years","4":"639","5":"2728914","6":"21420401"},{"1":"California","2":"Male","3":"45-54 years","4":"1708","5":"2513106","6":"20492996"},{"1":"California","2":"Male","3":"55-64 years","4":"3477","5":"2390949","6":"21075426"},{"1":"California","2":"Male","3":"65-74 years","4":"4749","5":"1634759","6":"15361155"},{"1":"California","2":"Male","3":"75-84 years","4":"4679","5":"743858","6":"6989539"},{"1":"California","2":"Male","3":"85 years and over","4":"4127","5":"19886144","6":"165470228"},{"1":"Colorado","2":"Female","3":"0-.99 years","4":"0","5":"30338","6":"1809703"},{"1":"Colorado","2":"Female","3":"01-04 years","4":"0","5":"126812","6":"7620035"},{"1":"Colorado","2":"Female","3":"05-14 years","4":"0","5":"348605","6":"20518881"},{"1":"Colorado","2":"Female","3":"15-24 years","4":"4","5":"358997","6":"20981911"},{"1":"Colorado","2":"Female","3":"25-34 years","4":"10","5":"429048","6":"22449525"},{"1":"Colorado","2":"Female","3":"35-44 years","4":"23","5":"393754","6":"21276445"},{"1":"Colorado","2":"Female","3":"45-54 years","4":"60","5":"344031","6":"20563411"},{"1":"Colorado","2":"Female","3":"55-64 years","4":"142","5":"359673","6":"21973114"},{"1":"Colorado","2":"Female","3":"65-74 years","4":"361","5":"278954","6":"17208126"},{"1":"Colorado","2":"Female","3":"75-84 years","4":"618","5":"126085","6":"8832725"},{"1":"Colorado","2":"Female","3":"85 years and over","4":"1042","5":"2901809","6":"171003046"},{"1":"Colorado","2":"Male","3":"0-.99 years","4":"0","5":"31892","6":"1893263"},{"1":"Colorado","2":"Male","3":"01-04 years","4":"0","5":"131782","6":"7968874"},{"1":"Colorado","2":"Male","3":"05-14 years","4":"0","5":"366807","6":"21520591"},{"1":"Colorado","2":"Male","3":"15-24 years","4":"6","5":"379598","6":"21603341"},{"1":"Colorado","2":"Male","3":"25-34 years","4":"17","5":"458296","6":"22791780"},{"1":"Colorado","2":"Male","3":"35-44 years","4":"41","5":"420206","6":"21420401"},{"1":"Colorado","2":"Male","3":"45-54 years","4":"160","5":"364080","6":"20492996"},{"1":"Colorado","2":"Male","3":"55-64 years","4":"325","5":"351638","6":"21075426"},{"1":"Colorado","2":"Male","3":"65-74 years","4":"636","5":"259353","6":"15361155"},{"1":"Colorado","2":"Male","3":"75-84 years","4":"831","5":"104755","6":"6989539"},{"1":"Colorado","2":"Male","3":"85 years and over","4":"791","5":"2929233","6":"165470228"},{"1":"Connecticut","2":"Female","3":"0-.99 years","4":"0","5":"16833","6":"1809703"},{"1":"Connecticut","2":"Female","3":"01-04 years","4":"0","5":"71654","6":"7620035"},{"1":"Connecticut","2":"Female","3":"05-14 years","4":"0","5":"204664","6":"20518881"},{"1":"Connecticut","2":"Female","3":"15-24 years","4":"6","5":"226235","6":"20981911"},{"1":"Connecticut","2":"Female","3":"25-34 years","4":"19","5":"219489","6":"22449525"},{"1":"Connecticut","2":"Female","3":"35-44 years","4":"14","5":"222853","6":"21276445"},{"1":"Connecticut","2":"Female","3":"45-54 years","4":"44","5":"241048","6":"20563411"},{"1":"Connecticut","2":"Female","3":"55-64 years","4":"190","5":"268120","6":"21973114"},{"1":"Connecticut","2":"Female","3":"65-74 years","4":"429","5":"193906","6":"17208126"},{"1":"Connecticut","2":"Female","3":"75-84 years","4":"798","5":"103749","6":"8832725"},{"1":"Connecticut","2":"Female","3":"85 years and over","4":"1756","5":"1873203","6":"171003046"},{"1":"Connecticut","2":"Male","3":"0-.99 years","4":"0","5":"17623","6":"1893263"},{"1":"Connecticut","2":"Male","3":"01-04 years","4":"0","5":"74805","6":"7968874"},{"1":"Connecticut","2":"Male","3":"05-14 years","4":"0","5":"213254","6":"21520591"},{"1":"Connecticut","2":"Male","3":"15-24 years","4":"6","5":"235290","6":"21603341"},{"1":"Connecticut","2":"Male","3":"25-34 years","4":"13","5":"225306","6":"22791780"},{"1":"Connecticut","2":"Male","3":"35-44 years","4":"28","5":"218454","6":"21420401"},{"1":"Connecticut","2":"Male","3":"45-54 years","4":"115","5":"230900","6":"20492996"},{"1":"Connecticut","2":"Male","3":"55-64 years","4":"346","5":"256081","6":"21075426"},{"1":"Connecticut","2":"Male","3":"65-74 years","4":"653","5":"172369","6":"15361155"},{"1":"Connecticut","2":"Male","3":"75-84 years","4":"856","5":"80312","6":"6989539"},{"1":"Connecticut","2":"Male","3":"85 years and over","4":"1046","5":"1779342","6":"165470228"},{"1":"Delaware","2":"Female","3":"0-.99 years","4":"0","5":"5177","6":"1809703"},{"1":"Delaware","2":"Female","3":"01-04 years","4":"0","5":"21681","6":"7620035"},{"1":"Delaware","2":"Female","3":"05-14 years","4":"0","5":"58439","6":"20518881"},{"1":"Delaware","2":"Female","3":"15-24 years","4":"1","5":"59269","6":"20981911"},{"1":"Delaware","2":"Female","3":"25-34 years","4":"3","5":"64387","6":"22449525"},{"1":"Delaware","2":"Female","3":"35-44 years","4":"7","5":"59800","6":"21276445"},{"1":"Delaware","2":"Female","3":"45-54 years","4":"24","5":"61280","6":"20563411"},{"1":"Delaware","2":"Female","3":"55-64 years","4":"47","5":"74326","6":"21973114"},{"1":"Delaware","2":"Female","3":"65-74 years","4":"82","5":"63124","6":"17208126"},{"1":"Delaware","2":"Female","3":"75-84 years","4":"142","5":"30696","6":"8832725"},{"1":"Delaware","2":"Female","3":"85 years and over","4":"247","5":"521239","6":"171003046"},{"1":"Delaware","2":"Male","3":"0-.99 years","4":"0","5":"5360","6":"1893263"},{"1":"Delaware","2":"Male","3":"01-04 years","4":"0","5":"22593","6":"7968874"},{"1":"Delaware","2":"Male","3":"05-14 years","4":"0","5":"60301","6":"21520591"},{"1":"Delaware","2":"Male","3":"15-24 years","4":"1","5":"58839","6":"21603341"},{"1":"Delaware","2":"Male","3":"25-34 years","4":"5","5":"62579","6":"22791780"},{"1":"Delaware","2":"Male","3":"35-44 years","4":"12","5":"57635","6":"21420401"},{"1":"Delaware","2":"Male","3":"45-54 years","4":"21","5":"57185","6":"20492996"},{"1":"Delaware","2":"Male","3":"55-64 years","4":"72","5":"67056","6":"21075426"},{"1":"Delaware","2":"Male","3":"65-74 years","4":"137","5":"54776","6":"15361155"},{"1":"Delaware","2":"Male","3":"75-84 years","4":"168","5":"25226","6":"6989539"},{"1":"Delaware","2":"Male","3":"85 years and over","4":"135","5":"485338","6":"165470228"},{"1":"District of Columbia","2":"Female","3":"0-.99 years","4":"0","5":"4285","6":"1809703"},{"1":"District of Columbia","2":"Female","3":"01-04 years","4":"0","5":"16384","6":"7620035"},{"1":"District of Columbia","2":"Female","3":"05-14 years","4":"0","5":"33873","6":"20518881"},{"1":"District of Columbia","2":"Female","3":"15-24 years","4":"1","5":"36611","6":"20981911"},{"1":"District of Columbia","2":"Female","3":"25-34 years","4":"2","5":"82505","6":"22449525"},{"1":"District of Columbia","2":"Female","3":"35-44 years","4":"5","5":"55706","6":"21276445"},{"1":"District of Columbia","2":"Female","3":"45-54 years","4":"25","5":"35871","6":"20563411"},{"1":"District of Columbia","2":"Female","3":"55-64 years","4":"73","5":"34914","6":"21973114"},{"1":"District of Columbia","2":"Female","3":"65-74 years","4":"102","5":"27956","6":"17208126"},{"1":"District of Columbia","2":"Female","3":"75-84 years","4":"81","5":"14271","6":"8832725"},{"1":"District of Columbia","2":"Female","3":"85 years and over","4":"120","5":"356236","6":"171003046"},{"1":"District of Columbia","2":"Male","3":"0-.99 years","4":"0","5":"4486","6":"1893263"},{"1":"District of Columbia","2":"Male","3":"01-04 years","4":"0","5":"17344","6":"7968874"},{"1":"District of Columbia","2":"Male","3":"05-14 years","4":"0","5":"34580","6":"21520591"},{"1":"District of Columbia","2":"Male","3":"15-24 years","4":"0","5":"31808","6":"21603341"},{"1":"District of Columbia","2":"Male","3":"25-34 years","4":"5","5":"72081","6":"22791780"},{"1":"District of Columbia","2":"Male","3":"35-44 years","4":"27","5":"53613","6":"21420401"},{"1":"District of Columbia","2":"Male","3":"45-54 years","4":"66","5":"36409","6":"20492996"},{"1":"District of Columbia","2":"Male","3":"55-64 years","4":"118","5":"33194","6":"21075426"},{"1":"District of Columbia","2":"Male","3":"65-74 years","4":"169","5":"21580","6":"15361155"},{"1":"District of Columbia","2":"Male","3":"75-84 years","4":"122","5":"9664","6":"6989539"},{"1":"District of Columbia","2":"Male","3":"85 years and over","4":"81","5":"321803","6":"165470228"},{"1":"Florida","2":"Female","3":"0-.99 years","4":"0","5":"104211","6":"1809703"},{"1":"Florida","2":"Female","3":"01-04 years","4":"0","5":"442371","6":"7620035"},{"1":"Florida","2":"Female","3":"05-14 years","4":"0","5":"1182462","6":"20518881"},{"1":"Florida","2":"Female","3":"15-24 years","4":"14","5":"1215292","6":"20981911"},{"1":"Florida","2":"Female","3":"25-34 years","4":"51","5":"1356582","6":"22449525"},{"1":"Florida","2":"Female","3":"35-44 years","4":"130","5":"1326397","6":"21276445"},{"1":"Florida","2":"Female","3":"45-54 years","4":"308","5":"1365062","6":"20563411"},{"1":"Florida","2":"Female","3":"55-64 years","4":"859","5":"1529349","6":"21973114"},{"1":"Florida","2":"Female","3":"65-74 years","4":"1774","5":"1342699","6":"17208126"},{"1":"Florida","2":"Female","3":"75-84 years","4":"2730","5":"780537","6":"8832725"},{"1":"Florida","2":"Female","3":"85 years and over","4":"3562","5":"11301890","6":"171003046"},{"1":"Florida","2":"Male","3":"0-.99 years","4":"0","5":"109028","6":"1893263"},{"1":"Florida","2":"Male","3":"01-04 years","4":"0","5":"461291","6":"7968874"},{"1":"Florida","2":"Male","3":"05-14 years","4":"0","5":"1237093","6":"21520591"},{"1":"Florida","2":"Male","3":"15-24 years","4":"22","5":"1248838","6":"21603341"},{"1":"Florida","2":"Male","3":"25-34 years","4":"79","5":"1377997","6":"22791780"},{"1":"Florida","2":"Male","3":"35-44 years","4":"234","5":"1321979","6":"21420401"},{"1":"Florida","2":"Male","3":"45-54 years","4":"603","5":"1339800","6":"20492996"},{"1":"Florida","2":"Male","3":"55-64 years","4":"1626","5":"1422018","6":"21075426"},{"1":"Florida","2":"Male","3":"65-74 years","4":"2964","5":"1168142","6":"15361155"},{"1":"Florida","2":"Male","3":"75-84 years","4":"3780","5":"652601","6":"6989539"},{"1":"Florida","2":"Male","3":"85 years and over","4":"3086","5":"10775423","6":"165470228"},{"1":"Georgia","2":"Female","3":"0-.99 years","4":"0","5":"60422","6":"1809703"},{"1":"Georgia","2":"Female","3":"01-04 years","4":"0","5":"256171","6":"7620035"},{"1":"Georgia","2":"Female","3":"05-14 years","4":"0","5":"710498","6":"20518881"},{"1":"Georgia","2":"Female","3":"15-24 years","4":"14","5":"716137","6":"20981911"},{"1":"Georgia","2":"Female","3":"25-34 years","4":"46","5":"747447","6":"22449525"},{"1":"Georgia","2":"Female","3":"35-44 years","4":"92","5":"725270","6":"21276445"},{"1":"Georgia","2":"Female","3":"45-54 years","4":"226","5":"717798","6":"20563411"},{"1":"Georgia","2":"Female","3":"55-64 years","4":"598","5":"689954","6":"21973114"},{"1":"Georgia","2":"Female","3":"65-74 years","4":"1085","5":"515765","6":"17208126"},{"1":"Georgia","2":"Female","3":"75-84 years","4":"1336","5":"249311","6":"8832725"},{"1":"Georgia","2":"Female","3":"85 years and over","4":"1483","5":"5574375","6":"171003046"},{"1":"Georgia","2":"Male","3":"0-.99 years","4":"0","5":"63206","6":"1893263"},{"1":"Georgia","2":"Male","3":"01-04 years","4":"0","5":"266527","6":"7968874"},{"1":"Georgia","2":"Male","3":"05-14 years","4":"0","5":"738929","6":"21520591"},{"1":"Georgia","2":"Male","3":"15-24 years","4":"14","5":"720147","6":"21603341"},{"1":"Georgia","2":"Male","3":"25-34 years","4":"49","5":"714451","6":"22791780"},{"1":"Georgia","2":"Male","3":"35-44 years","4":"126","5":"678754","6":"21420401"},{"1":"Georgia","2":"Male","3":"45-54 years","4":"373","5":"687406","6":"20492996"},{"1":"Georgia","2":"Male","3":"55-64 years","4":"873","5":"643492","6":"21075426"},{"1":"Georgia","2":"Male","3":"65-74 years","4":"1534","5":"437179","6":"15361155"},{"1":"Georgia","2":"Male","3":"75-84 years","4":"1615","5":"190132","6":"6989539"},{"1":"Georgia","2":"Male","3":"85 years and over","4":"983","5":"5236723","6":"165470228"},{"1":"Hawaii","2":"Female","3":"0-.99 years","4":"0","5":"7912","6":"1809703"},{"1":"Hawaii","2":"Female","3":"01-04 years","4":"0","5":"33166","6":"7620035"},{"1":"Hawaii","2":"Female","3":"05-14 years","4":"0","5":"83899","6":"20518881"},{"1":"Hawaii","2":"Female","3":"15-24 years","4":"0","5":"73162","6":"20981911"},{"1":"Hawaii","2":"Female","3":"25-34 years","4":"1","5":"92390","6":"22449525"},{"1":"Hawaii","2":"Female","3":"35-44 years","4":"2","5":"91726","6":"21276445"},{"1":"Hawaii","2":"Female","3":"45-54 years","4":"5","5":"85592","6":"20563411"},{"1":"Hawaii","2":"Female","3":"55-64 years","4":"20","5":"93482","6":"21973114"},{"1":"Hawaii","2":"Female","3":"65-74 years","4":"23","5":"82743","6":"17208126"},{"1":"Hawaii","2":"Female","3":"75-84 years","4":"28","5":"42858","6":"8832725"},{"1":"Hawaii","2":"Female","3":"85 years and over","4":"53","5":"738164","6":"171003046"},{"1":"Hawaii","2":"Male","3":"0-.99 years","4":"0","5":"8372","6":"1893263"},{"1":"Hawaii","2":"Male","3":"01-04 years","4":"0","5":"35513","6":"7968874"},{"1":"Hawaii","2":"Male","3":"05-14 years","4":"0","5":"89158","6":"21520591"},{"1":"Hawaii","2":"Male","3":"15-24 years","4":"0","5":"76311","6":"21603341"},{"1":"Hawaii","2":"Male","3":"25-34 years","4":"2","5":"90283","6":"22791780"},{"1":"Hawaii","2":"Male","3":"35-44 years","4":"5","5":"90482","6":"21420401"},{"1":"Hawaii","2":"Male","3":"45-54 years","4":"17","5":"85695","6":"20492996"},{"1":"Hawaii","2":"Male","3":"55-64 years","4":"37","5":"92235","6":"21075426"},{"1":"Hawaii","2":"Male","3":"65-74 years","4":"63","5":"78167","6":"15361155"},{"1":"Hawaii","2":"Male","3":"75-84 years","4":"53","5":"35697","6":"6989539"},{"1":"Hawaii","2":"Male","3":"85 years and over","4":"48","5":"710831","6":"165470228"},{"1":"Idaho","2":"Female","3":"0-.99 years","4":"0","5":"10525","6":"1809703"},{"1":"Idaho","2":"Female","3":"01-04 years","4":"0","5":"44778","6":"7620035"},{"1":"Idaho","2":"Female","3":"05-14 years","4":"0","5":"128283","6":"20518881"},{"1":"Idaho","2":"Female","3":"15-24 years","4":"0","5":"130012","6":"20981911"},{"1":"Idaho","2":"Female","3":"25-34 years","4":"0","5":"116894","6":"22449525"},{"1":"Idaho","2":"Female","3":"35-44 years","4":"9","5":"116279","6":"21276445"},{"1":"Idaho","2":"Female","3":"45-54 years","4":"21","5":"101702","6":"20563411"},{"1":"Idaho","2":"Female","3":"55-64 years","4":"46","5":"113295","6":"21973114"},{"1":"Idaho","2":"Female","3":"65-74 years","4":"124","5":"94443","6":"17208126"},{"1":"Idaho","2":"Female","3":"75-84 years","4":"165","5":"45709","6":"8832725"},{"1":"Idaho","2":"Female","3":"85 years and over","4":"288","5":"937092","6":"171003046"},{"1":"Idaho","2":"Male","3":"0-.99 years","4":"0","5":"11028","6":"1893263"},{"1":"Idaho","2":"Male","3":"01-04 years","4":"0","5":"47211","6":"7968874"},{"1":"Idaho","2":"Male","3":"05-14 years","4":"0","5":"134827","6":"21520591"},{"1":"Idaho","2":"Male","3":"15-24 years","4":"2","5":"131105","6":"21603341"},{"1":"Idaho","2":"Male","3":"25-34 years","4":"7","5":"120569","6":"22791780"},{"1":"Idaho","2":"Male","3":"35-44 years","4":"20","5":"120311","6":"21420401"},{"1":"Idaho","2":"Male","3":"45-54 years","4":"28","5":"106615","6":"20492996"},{"1":"Idaho","2":"Male","3":"55-64 years","4":"78","5":"110271","6":"21075426"},{"1":"Idaho","2":"Male","3":"65-74 years","4":"208","5":"91537","6":"15361155"},{"1":"Idaho","2":"Male","3":"75-84 years","4":"301","5":"41284","6":"6989539"},{"1":"Idaho","2":"Male","3":"85 years and over","4":"263","5":"937532","6":"165470228"},{"1":"Illinois","2":"Female","3":"0-.99 years","4":"0","5":"68423","6":"1809703"},{"1":"Illinois","2":"Female","3":"01-04 years","4":"0","5":"291314","6":"7620035"},{"1":"Illinois","2":"Female","3":"05-14 years","4":"0","5":"791662","6":"20518881"},{"1":"Illinois","2":"Female","3":"15-24 years","4":"10","5":"812000","6":"20981911"},{"1":"Illinois","2":"Female","3":"25-34 years","4":"41","5":"864960","6":"22449525"},{"1":"Illinois","2":"Female","3":"35-44 years","4":"85","5":"834790","6":"21276445"},{"1":"Illinois","2":"Female","3":"45-54 years","4":"234","5":"804634","6":"20563411"},{"1":"Illinois","2":"Female","3":"55-64 years","4":"652","5":"853027","6":"21973114"},{"1":"Illinois","2":"Female","3":"65-74 years","4":"1294","5":"646886","6":"17208126"},{"1":"Illinois","2":"Female","3":"75-84 years","4":"1945","5":"335918","6":"8832725"},{"1":"Illinois","2":"Female","3":"85 years and over","4":"3435","5":"6621120","6":"171003046"},{"1":"Illinois","2":"Male","3":"0-.99 years","4":"0","5":"71503","6":"1893263"},{"1":"Illinois","2":"Male","3":"01-04 years","4":"0","5":"304127","6":"7968874"},{"1":"Illinois","2":"Male","3":"05-14 years","4":"0","5":"828077","6":"21520591"},{"1":"Illinois","2":"Male","3":"15-24 years","4":"16","5":"839386","6":"21603341"},{"1":"Illinois","2":"Male","3":"25-34 years","4":"74","5":"876775","6":"22791780"},{"1":"Illinois","2":"Male","3":"35-44 years","4":"204","5":"846601","6":"21420401"},{"1":"Illinois","2":"Male","3":"45-54 years","4":"527","5":"804939","6":"20492996"},{"1":"Illinois","2":"Male","3":"55-64 years","4":"1195","5":"824817","6":"21075426"},{"1":"Illinois","2":"Male","3":"65-74 years","4":"2168","5":"575281","6":"15361155"},{"1":"Illinois","2":"Male","3":"75-84 years","4":"2482","5":"254402","6":"6989539"},{"1":"Illinois","2":"Male","3":"85 years and over","4":"2355","5":"6391198","6":"165470228"},{"1":"Indiana","2":"Female","3":"0-.99 years","4":"0","5":"39131","6":"1809703"},{"1":"Indiana","2":"Female","3":"01-04 years","4":"0","5":"164003","6":"7620035"},{"1":"Indiana","2":"Female","3":"05-14 years","4":"0","5":"442186","6":"20518881"},{"1":"Indiana","2":"Female","3":"15-24 years","4":"8","5":"454713","6":"20981911"},{"1":"Indiana","2":"Female","3":"25-34 years","4":"28","5":"440344","6":"22449525"},{"1":"Indiana","2":"Female","3":"35-44 years","4":"40","5":"422860","6":"21276445"},{"1":"Indiana","2":"Female","3":"45-54 years","4":"113","5":"410462","6":"20563411"},{"1":"Indiana","2":"Female","3":"55-64 years","4":"350","5":"446770","6":"21973114"},{"1":"Indiana","2":"Female","3":"65-74 years","4":"784","5":"345433","6":"17208126"},{"1":"Indiana","2":"Female","3":"75-84 years","4":"1307","5":"176515","6":"8832725"},{"1":"Indiana","2":"Female","3":"85 years and over","4":"2178","5":"3501305","6":"171003046"},{"1":"Indiana","2":"Male","3":"0-.99 years","4":"0","5":"41032","6":"1893263"},{"1":"Indiana","2":"Male","3":"01-04 years","4":"0","5":"172637","6":"7968874"},{"1":"Indiana","2":"Male","3":"05-14 years","4":"0","5":"464282","6":"21520591"},{"1":"Indiana","2":"Male","3":"15-24 years","4":"10","5":"476804","6":"21603341"},{"1":"Indiana","2":"Male","3":"25-34 years","4":"20","5":"446483","6":"22791780"},{"1":"Indiana","2":"Male","3":"35-44 years","4":"61","5":"426605","6":"21420401"},{"1":"Indiana","2":"Male","3":"45-54 years","4":"162","5":"415612","6":"20492996"},{"1":"Indiana","2":"Male","3":"55-64 years","4":"561","5":"434301","6":"21075426"},{"1":"Indiana","2":"Male","3":"65-74 years","4":"1137","5":"312011","6":"15361155"},{"1":"Indiana","2":"Male","3":"75-84 years","4":"1592","5":"135740","6":"6989539"},{"1":"Indiana","2":"Male","3":"85 years and over","4":"1451","5":"3406849","6":"165470228"},{"1":"Iowa","2":"Female","3":"0-.99 years","4":"0","5":"18038","6":"1809703"},{"1":"Iowa","2":"Female","3":"01-04 years","4":"0","5":"76525","6":"7620035"},{"1":"Iowa","2":"Female","3":"05-14 years","4":"0","5":"205018","6":"20518881"},{"1":"Iowa","2":"Female","3":"15-24 years","4":"4","5":"216350","6":"20981911"},{"1":"Iowa","2":"Female","3":"25-34 years","4":"11","5":"192689","6":"22449525"},{"1":"Iowa","2":"Female","3":"35-44 years","4":"10","5":"193496","6":"21276445"},{"1":"Iowa","2":"Female","3":"45-54 years","4":"43","5":"178274","6":"20563411"},{"1":"Iowa","2":"Female","3":"55-64 years","4":"132","5":"209033","6":"21973114"},{"1":"Iowa","2":"Female","3":"65-74 years","4":"319","5":"165974","6":"17208126"},{"1":"Iowa","2":"Female","3":"75-84 years","4":"602","5":"88606","6":"8832725"},{"1":"Iowa","2":"Female","3":"85 years and over","4":"1168","5":"1640681","6":"171003046"},{"1":"Iowa","2":"Male","3":"0-.99 years","4":"0","5":"18951","6":"1893263"},{"1":"Iowa","2":"Male","3":"01-04 years","4":"0","5":"79758","6":"7968874"},{"1":"Iowa","2":"Male","3":"05-14 years","4":"0","5":"215626","6":"21520591"},{"1":"Iowa","2":"Male","3":"15-24 years","4":"0","5":"228263","6":"21603341"},{"1":"Iowa","2":"Male","3":"25-34 years","4":"20","5":"203039","6":"22791780"},{"1":"Iowa","2":"Male","3":"35-44 years","4":"30","5":"204349","6":"21420401"},{"1":"Iowa","2":"Male","3":"45-54 years","4":"83","5":"185905","6":"20492996"},{"1":"Iowa","2":"Male","3":"55-64 years","4":"253","5":"208688","6":"21075426"},{"1":"Iowa","2":"Male","3":"65-74 years","4":"474","5":"158126","6":"15361155"},{"1":"Iowa","2":"Male","3":"75-84 years","4":"739","5":"70899","6":"6989539"},{"1":"Iowa","2":"Male","3":"85 years and over","4":"893","5":"1622938","6":"165470228"},{"1":"Kansas","2":"Female","3":"0-.99 years","4":"0","5":"17102","6":"1809703"},{"1":"Kansas","2":"Female","3":"01-04 years","4":"0","5":"72261","6":"7620035"},{"1":"Kansas","2":"Female","3":"05-14 years","4":"0","5":"197990","6":"20518881"},{"1":"Kansas","2":"Female","3":"15-24 years","4":"3","5":"199734","6":"20981911"},{"1":"Kansas","2":"Female","3":"25-34 years","4":"9","5":"182741","6":"22449525"},{"1":"Kansas","2":"Female","3":"35-44 years","4":"15","5":"181957","6":"21276445"},{"1":"Kansas","2":"Female","3":"45-54 years","4":"47","5":"162427","6":"20563411"},{"1":"Kansas","2":"Female","3":"55-64 years","4":"106","5":"187766","6":"21973114"},{"1":"Kansas","2":"Female","3":"65-74 years","4":"264","5":"145492","6":"17208126"},{"1":"Kansas","2":"Female","3":"75-84 years","4":"417","5":"74899","6":"8832725"},{"1":"Kansas","2":"Female","3":"85 years and over","4":"759","5":"1498715","6":"171003046"},{"1":"Kansas","2":"Male","3":"0-.99 years","4":"0","5":"18059","6":"1893263"},{"1":"Kansas","2":"Male","3":"01-04 years","4":"0","5":"76264","6":"7968874"},{"1":"Kansas","2":"Male","3":"05-14 years","4":"0","5":"207646","6":"21520591"},{"1":"Kansas","2":"Male","3":"15-24 years","4":"4","5":"210957","6":"21603341"},{"1":"Kansas","2":"Male","3":"25-34 years","4":"13","5":"189199","6":"22791780"},{"1":"Kansas","2":"Male","3":"35-44 years","4":"27","5":"186282","6":"21420401"},{"1":"Kansas","2":"Male","3":"45-54 years","4":"80","5":"167011","6":"20492996"},{"1":"Kansas","2":"Male","3":"55-64 years","4":"203","5":"183442","6":"21075426"},{"1":"Kansas","2":"Male","3":"65-74 years","4":"367","5":"136377","6":"15361155"},{"1":"Kansas","2":"Male","3":"75-84 years","4":"613","5":"59734","6":"6989539"},{"1":"Kansas","2":"Male","3":"85 years and over","4":"581","5":"1477067","6":"165470228"},{"1":"Kentucky","2":"Female","3":"0-.99 years","4":"0","5":"25505","6":"1809703"},{"1":"Kentucky","2":"Female","3":"01-04 years","4":"0","5":"106777","6":"7620035"},{"1":"Kentucky","2":"Female","3":"05-14 years","4":"0","5":"281031","6":"20518881"},{"1":"Kentucky","2":"Female","3":"15-24 years","4":"0","5":"283729","6":"20981911"},{"1":"Kentucky","2":"Female","3":"25-34 years","4":"14","5":"287728","6":"22449525"},{"1":"Kentucky","2":"Female","3":"35-44 years","4":"16","5":"279424","6":"21276445"},{"1":"Kentucky","2":"Female","3":"45-54 years","4":"65","5":"281574","6":"20563411"},{"1":"Kentucky","2":"Female","3":"55-64 years","4":"206","5":"309311","6":"21973114"},{"1":"Kentucky","2":"Female","3":"65-74 years","4":"420","5":"243613","6":"17208126"},{"1":"Kentucky","2":"Female","3":"75-84 years","4":"654","5":"122064","6":"8832725"},{"1":"Kentucky","2":"Female","3":"85 years and over","4":"995","5":"2318760","6":"171003046"},{"1":"Kentucky","2":"Male","3":"0-.99 years","4":"0","5":"26865","6":"1893263"},{"1":"Kentucky","2":"Male","3":"01-04 years","4":"0","5":"112365","6":"7968874"},{"1":"Kentucky","2":"Male","3":"05-14 years","4":"0","5":"297006","6":"21520591"},{"1":"Kentucky","2":"Male","3":"15-24 years","4":"0","5":"295198","6":"21603341"},{"1":"Kentucky","2":"Male","3":"25-34 years","4":"19","5":"294196","6":"22791780"},{"1":"Kentucky","2":"Male","3":"35-44 years","4":"33","5":"280522","6":"21420401"},{"1":"Kentucky","2":"Male","3":"45-54 years","4":"83","5":"282946","6":"20492996"},{"1":"Kentucky","2":"Male","3":"55-64 years","4":"266","5":"294456","6":"21075426"},{"1":"Kentucky","2":"Male","3":"65-74 years","4":"601","5":"218324","6":"15361155"},{"1":"Kentucky","2":"Male","3":"75-84 years","4":"683","5":"94646","6":"6989539"},{"1":"Kentucky","2":"Male","3":"85 years and over","4":"584","5":"2247704","6":"165470228"},{"1":"Louisiana","2":"Female","3":"0-.99 years","4":"0","5":"27747","6":"1809703"},{"1":"Louisiana","2":"Female","3":"01-04 years","4":"0","5":"117890","6":"7620035"},{"1":"Louisiana","2":"Female","3":"05-14 years","4":"0","5":"305160","6":"20518881"},{"1":"Louisiana","2":"Female","3":"15-24 years","4":"6","5":"298085","6":"20981911"},{"1":"Louisiana","2":"Female","3":"25-34 years","4":"22","5":"320381","6":"22449525"},{"1":"Louisiana","2":"Female","3":"35-44 years","4":"63","5":"304749","6":"21276445"},{"1":"Louisiana","2":"Female","3":"45-54 years","4":"140","5":"275256","6":"20563411"},{"1":"Louisiana","2":"Female","3":"55-64 years","4":"425","5":"311379","6":"21973114"},{"1":"Louisiana","2":"Female","3":"65-74 years","4":"675","5":"241183","6":"17208126"},{"1":"Louisiana","2":"Female","3":"75-84 years","4":"971","5":"119732","6":"8832725"},{"1":"Louisiana","2":"Female","3":"85 years and over","4":"980","5":"2417454","6":"171003046"},{"1":"Louisiana","2":"Male","3":"0-.99 years","4":"0","5":"29018","6":"1893263"},{"1":"Louisiana","2":"Male","3":"01-04 years","4":"0","5":"122576","6":"7968874"},{"1":"Louisiana","2":"Male","3":"05-14 years","4":"0","5":"317914","6":"21520591"},{"1":"Louisiana","2":"Male","3":"15-24 years","4":"10","5":"301111","6":"21603341"},{"1":"Louisiana","2":"Male","3":"25-34 years","4":"25","5":"312801","6":"22791780"},{"1":"Louisiana","2":"Male","3":"35-44 years","4":"82","5":"297302","6":"21420401"},{"1":"Louisiana","2":"Male","3":"45-54 years","4":"228","5":"266657","6":"20492996"},{"1":"Louisiana","2":"Male","3":"55-64 years","4":"546","5":"290726","6":"21075426"},{"1":"Louisiana","2":"Male","3":"65-74 years","4":"1025","5":"212145","6":"15361155"},{"1":"Louisiana","2":"Male","3":"75-84 years","4":"1111","5":"90709","6":"6989539"},{"1":"Louisiana","2":"Male","3":"85 years and over","4":"752","5":"2292637","6":"165470228"},{"1":"Maine","2":"Female","3":"0-.99 years","4":"0","5":"5954","6":"1809703"},{"1":"Maine","2":"Female","3":"01-04 years","4":"0","5":"25047","6":"7620035"},{"1":"Maine","2":"Female","3":"05-14 years","4":"0","5":"69839","6":"20518881"},{"1":"Maine","2":"Female","3":"15-24 years","4":"0","5":"74626","6":"20981911"},{"1":"Maine","2":"Female","3":"25-34 years","4":"0","5":"81484","6":"22449525"},{"1":"Maine","2":"Female","3":"35-44 years","4":"3","5":"80579","6":"21276445"},{"1":"Maine","2":"Female","3":"45-54 years","4":"9","5":"87937","6":"20563411"},{"1":"Maine","2":"Female","3":"55-64 years","4":"25","5":"109779","6":"21973114"},{"1":"Maine","2":"Female","3":"65-74 years","4":"26","5":"91226","6":"17208126"},{"1":"Maine","2":"Female","3":"75-84 years","4":"78","5":"45091","6":"8832725"},{"1":"Maine","2":"Female","3":"85 years and over","4":"124","5":"712076","6":"171003046"},{"1":"Maine","2":"Male","3":"0-.99 years","4":"0","5":"6375","6":"1893263"},{"1":"Maine","2":"Male","3":"01-04 years","4":"0","5":"26299","6":"7968874"},{"1":"Maine","2":"Male","3":"05-14 years","4":"0","5":"73674","6":"21520591"},{"1":"Maine","2":"Male","3":"15-24 years","4":"0","5":"78759","6":"21603341"},{"1":"Maine","2":"Male","3":"25-34 years","4":"2","5":"82049","6":"22791780"},{"1":"Maine","2":"Male","3":"35-44 years","4":"5","5":"79679","6":"21420401"},{"1":"Maine","2":"Male","3":"45-54 years","4":"14","5":"86127","6":"20492996"},{"1":"Maine","2":"Male","3":"55-64 years","4":"20","5":"104805","6":"21075426"},{"1":"Maine","2":"Male","3":"65-74 years","4":"47","5":"85356","6":"15361155"},{"1":"Maine","2":"Male","3":"75-84 years","4":"82","5":"37507","6":"6989539"},{"1":"Maine","2":"Male","3":"85 years and over","4":"68","5":"683060","6":"165470228"},{"1":"Maryland","2":"Female","3":"0-.99 years","4":"0","5":"34805","6":"1809703"},{"1":"Maryland","2":"Female","3":"01-04 years","4":"0","5":"145233","6":"7620035"},{"1":"Maryland","2":"Female","3":"05-14 years","4":"0","5":"382633","6":"20518881"},{"1":"Maryland","2":"Female","3":"15-24 years","4":"6","5":"373780","6":"20981911"},{"1":"Maryland","2":"Female","3":"25-34 years","4":"13","5":"415533","6":"22449525"},{"1":"Maryland","2":"Female","3":"35-44 years","4":"42","5":"414363","6":"21276445"},{"1":"Maryland","2":"Female","3":"45-54 years","4":"110","5":"411502","6":"20563411"},{"1":"Maryland","2":"Female","3":"55-64 years","4":"280","5":"435733","6":"21973114"},{"1":"Maryland","2":"Female","3":"65-74 years","4":"595","5":"316213","6":"17208126"},{"1":"Maryland","2":"Female","3":"75-84 years","4":"879","5":"159786","6":"8832725"},{"1":"Maryland","2":"Female","3":"85 years and over","4":"1333","5":"3233173","6":"171003046"},{"1":"Maryland","2":"Male","3":"0-.99 years","4":"0","5":"36007","6":"1893263"},{"1":"Maryland","2":"Male","3":"01-04 years","4":"0","5":"150907","6":"7968874"},{"1":"Maryland","2":"Male","3":"05-14 years","4":"0","5":"401382","6":"21520591"},{"1":"Maryland","2":"Male","3":"15-24 years","4":"7","5":"377200","6":"21603341"},{"1":"Maryland","2":"Male","3":"25-34 years","4":"38","5":"403327","6":"22791780"},{"1":"Maryland","2":"Male","3":"35-44 years","4":"86","5":"395175","6":"21420401"},{"1":"Maryland","2":"Male","3":"45-54 years","4":"215","5":"386501","6":"20492996"},{"1":"Maryland","2":"Male","3":"55-64 years","4":"489","5":"404315","6":"21075426"},{"1":"Maryland","2":"Male","3":"65-74 years","4":"754","5":"268364","6":"15361155"},{"1":"Maryland","2":"Male","3":"75-84 years","4":"1001","5":"119477","6":"6989539"},{"1":"Maryland","2":"Male","3":"85 years and over","4":"877","5":"3018383","6":"165470228"},{"1":"Massachusetts","2":"Female","3":"0-.99 years","4":"0","5":"33921","6":"1809703"},{"1":"Massachusetts","2":"Female","3":"01-04 years","4":"0","5":"140159","6":"7620035"},{"1":"Massachusetts","2":"Female","3":"05-14 years","4":"0","5":"379662","6":"20518881"},{"1":"Massachusetts","2":"Female","3":"15-24 years","4":"9","5":"458999","6":"20981911"},{"1":"Massachusetts","2":"Female","3":"25-34 years","4":"10","5":"496939","6":"22449525"},{"1":"Massachusetts","2":"Female","3":"35-44 years","4":"20","5":"446337","6":"21276445"},{"1":"Massachusetts","2":"Female","3":"45-54 years","4":"82","5":"458070","6":"20563411"},{"1":"Massachusetts","2":"Female","3":"55-64 years","4":"247","5":"498493","6":"21973114"},{"1":"Massachusetts","2":"Female","3":"65-74 years","4":"630","5":"375554","6":"17208126"},{"1":"Massachusetts","2":"Female","3":"75-84 years","4":"1312","5":"192593","6":"8832725"},{"1":"Massachusetts","2":"Female","3":"85 years and over","4":"3003","5":"3671423","6":"171003046"},{"1":"Massachusetts","2":"Male","3":"0-.99 years","4":"0","5":"35639","6":"1893263"},{"1":"Massachusetts","2":"Male","3":"01-04 years","4":"0","5":"147056","6":"7968874"},{"1":"Massachusetts","2":"Male","3":"05-14 years","4":"0","5":"398221","6":"21520591"},{"1":"Massachusetts","2":"Male","3":"15-24 years","4":"10","5":"459661","6":"21603341"},{"1":"Massachusetts","2":"Male","3":"25-34 years","4":"19","5":"499824","6":"22791780"},{"1":"Massachusetts","2":"Male","3":"35-44 years","4":"44","5":"439144","6":"21420401"},{"1":"Massachusetts","2":"Male","3":"45-54 years","4":"130","5":"440581","6":"20492996"},{"1":"Massachusetts","2":"Male","3":"55-64 years","4":"459","5":"474397","6":"21075426"},{"1":"Massachusetts","2":"Male","3":"65-74 years","4":"966","5":"329985","6":"15361155"},{"1":"Massachusetts","2":"Male","3":"75-84 years","4":"1460","5":"144845","6":"6989539"},{"1":"Massachusetts","2":"Male","3":"85 years and over","4":"1830","5":"3466165","6":"165470228"},{"1":"Michigan","2":"Female","3":"0-.99 years","4":"0","5":"52728","6":"1809703"},{"1":"Michigan","2":"Female","3":"01-04 years","4":"0","5":"221675","6":"7620035"},{"1":"Michigan","2":"Female","3":"05-14 years","4":"0","5":"597464","6":"20518881"},{"1":"Michigan","2":"Female","3":"15-24 years","4":"10","5":"651468","6":"20981911"},{"1":"Michigan","2":"Female","3":"25-34 years","4":"27","5":"644516","6":"22449525"},{"1":"Michigan","2":"Female","3":"35-44 years","4":"55","5":"596167","6":"21276445"},{"1":"Michigan","2":"Female","3":"45-54 years","4":"181","5":"626604","6":"20563411"},{"1":"Michigan","2":"Female","3":"55-64 years","4":"504","5":"716233","6":"21973114"},{"1":"Michigan","2":"Female","3":"65-74 years","4":"1098","5":"565168","6":"17208126"},{"1":"Michigan","2":"Female","3":"75-84 years","4":"1517","5":"281341","6":"8832725"},{"1":"Michigan","2":"Female","3":"85 years and over","4":"2306","5":"5201112","6":"171003046"},{"1":"Michigan","2":"Male","3":"0-.99 years","4":"0","5":"55303","6":"1893263"},{"1":"Michigan","2":"Male","3":"01-04 years","4":"0","5":"232133","6":"7968874"},{"1":"Michigan","2":"Male","3":"05-14 years","4":"0","5":"629649","6":"21520591"},{"1":"Michigan","2":"Male","3":"15-24 years","4":"14","5":"678733","6":"21603341"},{"1":"Michigan","2":"Male","3":"25-34 years","4":"41","5":"667814","6":"22791780"},{"1":"Michigan","2":"Male","3":"35-44 years","4":"98","5":"601354","6":"21420401"},{"1":"Michigan","2":"Male","3":"45-54 years","4":"337","5":"624195","6":"20492996"},{"1":"Michigan","2":"Male","3":"55-64 years","4":"834","5":"695426","6":"21075426"},{"1":"Michigan","2":"Male","3":"65-74 years","4":"1708","5":"514197","6":"15361155"},{"1":"Michigan","2":"Male","3":"75-84 years","4":"2004","5":"225209","6":"6989539"},{"1":"Michigan","2":"Male","3":"85 years and over","4":"1616","5":"5058455","6":"165470228"},{"1":"Minnesota","2":"Female","3":"0-.99 years","4":"0","5":"32612","6":"1809703"},{"1":"Minnesota","2":"Female","3":"01-04 years","4":"0","5":"137150","6":"7620035"},{"1":"Minnesota","2":"Female","3":"05-14 years","4":"0","5":"368153","6":"20518881"},{"1":"Minnesota","2":"Female","3":"15-24 years","4":"5","5":"357707","6":"20981911"},{"1":"Minnesota","2":"Female","3":"25-34 years","4":"16","5":"369435","6":"22449525"},{"1":"Minnesota","2":"Female","3":"35-44 years","4":"19","5":"368512","6":"21276445"},{"1":"Minnesota","2":"Female","3":"45-54 years","4":"48","5":"330663","6":"20563411"},{"1":"Minnesota","2":"Female","3":"55-64 years","4":"134","5":"381055","6":"21973114"},{"1":"Minnesota","2":"Female","3":"65-74 years","4":"378","5":"283769","6":"17208126"},{"1":"Minnesota","2":"Female","3":"75-84 years","4":"690","5":"144839","6":"8832725"},{"1":"Minnesota","2":"Female","3":"85 years and over","4":"1537","5":"2920597","6":"171003046"},{"1":"Minnesota","2":"Male","3":"0-.99 years","4":"0","5":"34016","6":"1893263"},{"1":"Minnesota","2":"Male","3":"01-04 years","4":"0","5":"143553","6":"7968874"},{"1":"Minnesota","2":"Male","3":"05-14 years","4":"0","5":"385901","6":"21520591"},{"1":"Minnesota","2":"Male","3":"15-24 years","4":"6","5":"369146","6":"21603341"},{"1":"Minnesota","2":"Male","3":"25-34 years","4":"11","5":"386626","6":"22791780"},{"1":"Minnesota","2":"Male","3":"35-44 years","4":"29","5":"386366","6":"21420401"},{"1":"Minnesota","2":"Male","3":"45-54 years","4":"100","5":"344173","6":"20492996"},{"1":"Minnesota","2":"Male","3":"55-64 years","4":"267","5":"383477","6":"21075426"},{"1":"Minnesota","2":"Male","3":"65-74 years","4":"559","5":"269806","6":"15361155"},{"1":"Minnesota","2":"Male","3":"75-84 years","4":"925","5":"119246","6":"6989539"},{"1":"Minnesota","2":"Male","3":"85 years and over","4":"1123","5":"2902964","6":"165470228"},{"1":"Mississippi","2":"Female","3":"0-.99 years","4":"0","5":"17112","6":"1809703"},{"1":"Mississippi","2":"Female","3":"01-04 years","4":"0","5":"71383","6":"7620035"},{"1":"Mississippi","2":"Female","3":"05-14 years","4":"0","5":"194750","6":"20518881"},{"1":"Mississippi","2":"Female","3":"15-24 years","4":"4","5":"199306","6":"20981911"},{"1":"Mississippi","2":"Female","3":"25-34 years","4":"26","5":"192119","6":"22449525"},{"1":"Mississippi","2":"Female","3":"35-44 years","4":"58","5":"187982","6":"21276445"},{"1":"Mississippi","2":"Female","3":"45-54 years","4":"145","5":"183773","6":"20563411"},{"1":"Mississippi","2":"Female","3":"55-64 years","4":"353","5":"199424","6":"21973114"},{"1":"Mississippi","2":"Female","3":"65-74 years","4":"530","5":"157979","6":"17208126"},{"1":"Mississippi","2":"Female","3":"75-84 years","4":"645","5":"81329","6":"8832725"},{"1":"Mississippi","2":"Female","3":"85 years and over","4":"739","5":"1550999","6":"171003046"},{"1":"Mississippi","2":"Male","3":"0-.99 years","4":"0","5":"17750","6":"1893263"},{"1":"Mississippi","2":"Male","3":"01-04 years","4":"0","5":"73505","6":"7968874"},{"1":"Mississippi","2":"Male","3":"05-14 years","4":"0","5":"202422","6":"21520591"},{"1":"Mississippi","2":"Male","3":"15-24 years","4":"6","5":"201153","6":"21603341"},{"1":"Mississippi","2":"Male","3":"25-34 years","4":"22","5":"183821","6":"22791780"},{"1":"Mississippi","2":"Male","3":"35-44 years","4":"65","5":"176594","6":"21420401"},{"1":"Mississippi","2":"Male","3":"45-54 years","4":"155","5":"173527","6":"20492996"},{"1":"Mississippi","2":"Male","3":"55-64 years","4":"383","5":"184562","6":"21075426"},{"1":"Mississippi","2":"Male","3":"65-74 years","4":"732","5":"137379","6":"15361155"},{"1":"Mississippi","2":"Male","3":"75-84 years","4":"800","5":"60394","6":"6989539"},{"1":"Mississippi","2":"Male","3":"85 years and over","4":"495","5":"1443237","6":"165470228"},{"1":"Missouri","2":"Female","3":"0-.99 years","4":"0","5":"34683","6":"1809703"},{"1":"Missouri","2":"Female","3":"01-04 years","4":"0","5":"143830","6":"7620035"},{"1":"Missouri","2":"Female","3":"05-14 years","4":"0","5":"382979","6":"20518881"},{"1":"Missouri","2":"Female","3":"15-24 years","4":"7","5":"390470","6":"20981911"},{"1":"Missouri","2":"Female","3":"25-34 years","4":"12","5":"405023","6":"22449525"},{"1":"Missouri","2":"Female","3":"35-44 years","4":"33","5":"384823","6":"21276445"},{"1":"Missouri","2":"Female","3":"45-54 years","4":"76","5":"365086","6":"20563411"},{"1":"Missouri","2":"Female","3":"55-64 years","4":"310","5":"423644","6":"21973114"},{"1":"Missouri","2":"Female","3":"65-74 years","4":"704","5":"330523","6":"17208126"},{"1":"Missouri","2":"Female","3":"75-84 years","4":"1000","5":"173004","6":"8832725"},{"1":"Missouri","2":"Female","3":"85 years and over","4":"1730","5":"3190535","6":"171003046"},{"1":"Missouri","2":"Male","3":"0-.99 years","4":"0","5":"36368","6":"1893263"},{"1":"Missouri","2":"Male","3":"01-04 years","4":"0","5":"151431","6":"7968874"},{"1":"Missouri","2":"Male","3":"05-14 years","4":"0","5":"403100","6":"21520591"},{"1":"Missouri","2":"Male","3":"15-24 years","4":"9","5":"402190","6":"21603341"},{"1":"Missouri","2":"Male","3":"25-34 years","4":"14","5":"403955","6":"22791780"},{"1":"Missouri","2":"Male","3":"35-44 years","4":"52","5":"385675","6":"21420401"},{"1":"Missouri","2":"Male","3":"45-54 years","4":"147","5":"362736","6":"20492996"},{"1":"Missouri","2":"Male","3":"55-64 years","4":"479","5":"407007","6":"21075426"},{"1":"Missouri","2":"Male","3":"65-74 years","4":"963","5":"294582","6":"15361155"},{"1":"Missouri","2":"Male","3":"75-84 years","4":"1324","5":"136146","6":"6989539"},{"1":"Missouri","2":"Male","3":"85 years and over","4":"1204","5":"3067686","6":"165470228"},{"1":"Montana","2":"Female","3":"0-.99 years","4":"0","5":"5587","6":"1809703"},{"1":"Montana","2":"Female","3":"01-04 years","4":"0","5":"23693","6":"7620035"},{"1":"Montana","2":"Female","3":"05-14 years","4":"0","5":"64869","6":"20518881"},{"1":"Montana","2":"Female","3":"15-24 years","4":"0","5":"65249","6":"20981911"},{"1":"Montana","2":"Female","3":"25-34 years","4":"3","5":"67408","6":"22449525"},{"1":"Montana","2":"Female","3":"35-44 years","4":"12","5":"65747","6":"21276445"},{"1":"Montana","2":"Female","3":"45-54 years","4":"16","5":"58272","6":"20563411"},{"1":"Montana","2":"Female","3":"55-64 years","4":"56","5":"76025","6":"21973114"},{"1":"Montana","2":"Female","3":"65-74 years","4":"98","5":"65103","6":"17208126"},{"1":"Montana","2":"Female","3":"75-84 years","4":"148","5":"30428","6":"8832725"},{"1":"Montana","2":"Female","3":"85 years and over","4":"225","5":"548329","6":"171003046"},{"1":"Montana","2":"Male","3":"0-.99 years","4":"0","5":"5804","6":"1893263"},{"1":"Montana","2":"Male","3":"01-04 years","4":"0","5":"24938","6":"7968874"},{"1":"Montana","2":"Male","3":"05-14 years","4":"0","5":"69069","6":"21520591"},{"1":"Montana","2":"Male","3":"15-24 years","4":"0","5":"71164","6":"21603341"},{"1":"Montana","2":"Male","3":"25-34 years","4":"6","5":"70760","6":"22791780"},{"1":"Montana","2":"Male","3":"35-44 years","4":"12","5":"69663","6":"21420401"},{"1":"Montana","2":"Male","3":"45-54 years","4":"33","5":"60998","6":"20492996"},{"1":"Montana","2":"Male","3":"55-64 years","4":"80","5":"74371","6":"21075426"},{"1":"Montana","2":"Male","3":"65-74 years","4":"174","5":"64852","6":"15361155"},{"1":"Montana","2":"Male","3":"75-84 years","4":"221","5":"28418","6":"6989539"},{"1":"Montana","2":"Male","3":"85 years and over","4":"186","5":"556681","6":"165470228"},{"1":"Nebraska","2":"Female","3":"0-.99 years","4":"0","5":"12205","6":"1809703"},{"1":"Nebraska","2":"Female","3":"01-04 years","4":"0","5":"51231","6":"7620035"},{"1":"Nebraska","2":"Female","3":"05-14 years","4":"0","5":"133849","6":"20518881"},{"1":"Nebraska","2":"Female","3":"15-24 years","4":"2","5":"132519","6":"20981911"},{"1":"Nebraska","2":"Female","3":"25-34 years","4":"6","5":"123560","6":"22449525"},{"1":"Nebraska","2":"Female","3":"35-44 years","4":"13","5":"122513","6":"21276445"},{"1":"Nebraska","2":"Female","3":"45-54 years","4":"26","5":"106865","6":"20563411"},{"1":"Nebraska","2":"Female","3":"55-64 years","4":"79","5":"121951","6":"21973114"},{"1":"Nebraska","2":"Female","3":"65-74 years","4":"145","5":"96237","6":"17208126"},{"1":"Nebraska","2":"Female","3":"75-84 years","4":"247","5":"49163","6":"8832725"},{"1":"Nebraska","2":"Female","3":"85 years and over","4":"465","5":"1000417","6":"171003046"},{"1":"Nebraska","2":"Male","3":"0-.99 years","4":"0","5":"12776","6":"1893263"},{"1":"Nebraska","2":"Male","3":"01-04 years","4":"0","5":"53635","6":"7968874"},{"1":"Nebraska","2":"Male","3":"05-14 years","4":"0","5":"141883","6":"21520591"},{"1":"Nebraska","2":"Male","3":"15-24 years","4":"3","5":"137852","6":"21603341"},{"1":"Nebraska","2":"Male","3":"25-34 years","4":"12","5":"128495","6":"22791780"},{"1":"Nebraska","2":"Male","3":"35-44 years","4":"14","5":"128545","6":"21420401"},{"1":"Nebraska","2":"Male","3":"45-54 years","4":"60","5":"112140","6":"20492996"},{"1":"Nebraska","2":"Male","3":"55-64 years","4":"130","5":"122563","6":"21075426"},{"1":"Nebraska","2":"Male","3":"65-74 years","4":"292","5":"90021","6":"15361155"},{"1":"Nebraska","2":"Male","3":"75-84 years","4":"387","5":"39731","6":"6989539"},{"1":"Nebraska","2":"Male","3":"85 years and over","4":"380","5":"995729","6":"165470228"},{"1":"Nevada","2":"Female","3":"0-.99 years","4":"0","5":"16843","6":"1809703"},{"1":"Nevada","2":"Female","3":"01-04 years","4":"0","5":"71414","6":"7620035"},{"1":"Nevada","2":"Female","3":"05-14 years","4":"0","5":"194173","6":"20518881"},{"1":"Nevada","2":"Female","3":"15-24 years","4":"2","5":"178534","6":"20981911"},{"1":"Nevada","2":"Female","3":"25-34 years","4":"10","5":"219873","6":"22449525"},{"1":"Nevada","2":"Female","3":"35-44 years","4":"21","5":"206055","6":"21276445"},{"1":"Nevada","2":"Female","3":"45-54 years","4":"65","5":"194576","6":"20563411"},{"1":"Nevada","2":"Female","3":"55-64 years","4":"169","5":"195442","6":"21973114"},{"1":"Nevada","2":"Female","3":"65-74 years","4":"306","5":"163003","6":"17208126"},{"1":"Nevada","2":"Female","3":"75-84 years","4":"409","5":"78385","6":"8832725"},{"1":"Nevada","2":"Female","3":"85 years and over","4":"323","5":"1567258","6":"171003046"},{"1":"Nevada","2":"Male","3":"0-.99 years","4":"0","5":"17614","6":"1893263"},{"1":"Nevada","2":"Male","3":"01-04 years","4":"0","5":"74713","6":"7968874"},{"1":"Nevada","2":"Male","3":"05-14 years","4":"0","5":"203778","6":"21520591"},{"1":"Nevada","2":"Male","3":"15-24 years","4":"5","5":"186329","6":"21603341"},{"1":"Nevada","2":"Male","3":"25-34 years","4":"15","5":"225483","6":"22791780"},{"1":"Nevada","2":"Male","3":"35-44 years","4":"70","5":"213262","6":"21420401"},{"1":"Nevada","2":"Male","3":"45-54 years","4":"200","5":"202775","6":"20492996"},{"1":"Nevada","2":"Male","3":"55-64 years","4":"342","5":"196465","6":"21075426"},{"1":"Nevada","2":"Male","3":"65-74 years","4":"598","5":"151760","6":"15361155"},{"1":"Nevada","2":"Male","3":"75-84 years","4":"638","5":"71361","6":"6989539"},{"1":"Nevada","2":"Male","3":"85 years and over","4":"352","5":"1578804","6":"165470228"},{"1":"New Hampshire","2":"Female","3":"0-.99 years","4":"0","5":"5968","6":"1809703"},{"1":"New Hampshire","2":"Female","3":"01-04 years","4":"0","5":"25094","6":"7620035"},{"1":"New Hampshire","2":"Female","3":"05-14 years","4":"0","5":"71196","6":"20518881"},{"1":"New Hampshire","2":"Female","3":"15-24 years","4":"0","5":"84857","6":"20981911"},{"1":"New Hampshire","2":"Female","3":"25-34 years","4":"0","5":"84178","6":"22449525"},{"1":"New Hampshire","2":"Female","3":"35-44 years","4":"0","5":"80378","6":"21276445"},{"1":"New Hampshire","2":"Female","3":"45-54 years","4":"16","5":"90489","6":"20563411"},{"1":"New Hampshire","2":"Female","3":"55-64 years","4":"43","5":"110303","6":"21973114"},{"1":"New Hampshire","2":"Female","3":"65-74 years","4":"51","5":"81838","6":"17208126"},{"1":"New Hampshire","2":"Female","3":"75-84 years","4":"105","5":"38701","6":"8832725"},{"1":"New Hampshire","2":"Female","3":"85 years and over","4":"244","5":"709446","6":"171003046"},{"1":"New Hampshire","2":"Male","3":"0-.99 years","4":"0","5":"6182","6":"1893263"},{"1":"New Hampshire","2":"Male","3":"01-04 years","4":"0","5":"26101","6":"7968874"},{"1":"New Hampshire","2":"Male","3":"05-14 years","4":"0","5":"75228","6":"21520591"},{"1":"New Hampshire","2":"Male","3":"15-24 years","4":"1","5":"87779","6":"21603341"},{"1":"New Hampshire","2":"Male","3":"25-34 years","4":"3","5":"89824","6":"22791780"},{"1":"New Hampshire","2":"Male","3":"35-44 years","4":"9","5":"82254","6":"21420401"},{"1":"New Hampshire","2":"Male","3":"45-54 years","4":"12","5":"90736","6":"20492996"},{"1":"New Hampshire","2":"Male","3":"55-64 years","4":"25","5":"108609","6":"21075426"},{"1":"New Hampshire","2":"Male","3":"65-74 years","4":"76","5":"77781","6":"15361155"},{"1":"New Hampshire","2":"Male","3":"75-84 years","4":"138","5":"32570","6":"6989539"},{"1":"New Hampshire","2":"Male","3":"85 years and over","4":"162","5":"696870","6":"165470228"},{"1":"New Jersey","2":"Female","3":"0-.99 years","4":"0","5":"50151","6":"1809703"},{"1":"New Jersey","2":"Female","3":"01-04 years","4":"0","5":"210324","6":"7620035"},{"1":"New Jersey","2":"Female","3":"05-14 years","4":"0","5":"563990","6":"20518881"},{"1":"New Jersey","2":"Female","3":"15-24 years","4":"15","5":"559809","6":"20981911"},{"1":"New Jersey","2":"Female","3":"25-34 years","4":"42","5":"587399","6":"22449525"},{"1":"New Jersey","2":"Female","3":"35-44 years","4":"87","5":"602591","6":"21276445"},{"1":"New Jersey","2":"Female","3":"45-54 years","4":"247","5":"626539","6":"20563411"},{"1":"New Jersey","2":"Female","3":"55-64 years","4":"743","5":"657357","6":"21973114"},{"1":"New Jersey","2":"Female","3":"65-74 years","4":"1302","5":"475028","6":"17208126"},{"1":"New Jersey","2":"Female","3":"75-84 years","4":"2183","5":"255021","6":"8832725"},{"1":"New Jersey","2":"Female","3":"85 years and over","4":"3670","5":"4830045","6":"171003046"},{"1":"New Jersey","2":"Male","3":"0-.99 years","4":"0","5":"52566","6":"1893263"},{"1":"New Jersey","2":"Male","3":"01-04 years","4":"0","5":"220844","6":"7968874"},{"1":"New Jersey","2":"Male","3":"05-14 years","4":"0","5":"589460","6":"21520591"},{"1":"New Jersey","2":"Male","3":"15-24 years","4":"14","5":"579942","6":"21603341"},{"1":"New Jersey","2":"Male","3":"25-34 years","4":"91","5":"601002","6":"22791780"},{"1":"New Jersey","2":"Male","3":"35-44 years","4":"246","5":"604697","6":"21420401"},{"1":"New Jersey","2":"Male","3":"45-54 years","4":"697","5":"613101","6":"20492996"},{"1":"New Jersey","2":"Male","3":"55-64 years","4":"1577","5":"628274","6":"21075426"},{"1":"New Jersey","2":"Male","3":"65-74 years","4":"2305","5":"413892","6":"15361155"},{"1":"New Jersey","2":"Male","3":"75-84 years","4":"2591","5":"188842","6":"6989539"},{"1":"New Jersey","2":"Male","3":"85 years and over","4":"2359","5":"4618312","6":"165470228"},{"1":"New Mexico","2":"Female","3":"0-.99 years","4":"0","5":"10855","6":"1809703"},{"1":"New Mexico","2":"Female","3":"01-04 years","4":"0","5":"46677","6":"7620035"},{"1":"New Mexico","2":"Female","3":"05-14 years","4":"0","5":"134347","6":"20518881"},{"1":"New Mexico","2":"Female","3":"15-24 years","4":"2","5":"135274","6":"20981911"},{"1":"New Mexico","2":"Female","3":"25-34 years","4":"21","5":"135216","6":"22449525"},{"1":"New Mexico","2":"Female","3":"35-44 years","4":"41","5":"128904","6":"21276445"},{"1":"New Mexico","2":"Female","3":"45-54 years","4":"83","5":"119442","6":"20563411"},{"1":"New Mexico","2":"Female","3":"55-64 years","4":"166","5":"142665","6":"21973114"},{"1":"New Mexico","2":"Female","3":"65-74 years","4":"261","5":"124103","6":"17208126"},{"1":"New Mexico","2":"Female","3":"75-84 years","4":"325","5":"61296","6":"8832725"},{"1":"New Mexico","2":"Female","3":"85 years and over","4":"384","5":"1086271","6":"171003046"},{"1":"New Mexico","2":"Male","3":"0-.99 years","4":"0","5":"11304","6":"1893263"},{"1":"New Mexico","2":"Male","3":"01-04 years","4":"0","5":"48239","6":"7968874"},{"1":"New Mexico","2":"Male","3":"05-14 years","4":"0","5":"139983","6":"21520591"},{"1":"New Mexico","2":"Male","3":"15-24 years","4":"3","5":"141402","6":"21603341"},{"1":"New Mexico","2":"Male","3":"25-34 years","4":"40","5":"140185","6":"22791780"},{"1":"New Mexico","2":"Male","3":"35-44 years","4":"73","5":"132010","6":"21420401"},{"1":"New Mexico","2":"Male","3":"45-54 years","4":"129","5":"117482","6":"20492996"},{"1":"New Mexico","2":"Male","3":"55-64 years","4":"261","5":"133597","6":"21075426"},{"1":"New Mexico","2":"Male","3":"65-74 years","4":"395","5":"111679","6":"15361155"},{"1":"New Mexico","2":"Male","3":"75-84 years","4":"401","5":"52099","6":"6989539"},{"1":"New Mexico","2":"Male","3":"85 years and over","4":"298","5":"1058100","6":"165470228"},{"1":"New York","2":"Female","3":"0-.99 years","4":"0","5":"110593","6":"1809703"},{"1":"New York","2":"Female","3":"01-04 years","4":"0","5":"451170","6":"7620035"},{"1":"New York","2":"Female","3":"05-14 years","4":"0","5":"1142377","6":"20518881"},{"1":"New York","2":"Female","3":"15-24 years","4":"14","5":"1237232","6":"20981911"},{"1":"New York","2":"Female","3":"25-34 years","4":"27","5":"1464962","6":"22449525"},{"1":"New York","2":"Female","3":"35-44 years","4":"68","5":"1291316","6":"21276445"},{"1":"New York","2":"Female","3":"45-54 years","4":"170","5":"1289313","6":"20563411"},{"1":"New York","2":"Female","3":"55-64 years","4":"574","5":"1397740","6":"21973114"},{"1":"New York","2":"Female","3":"65-74 years","4":"1168","5":"1056197","6":"17208126"},{"1":"New York","2":"Female","3":"75-84 years","4":"1933","5":"567116","6":"8832725"},{"1":"New York","2":"Female","3":"85 years and over","4":"3777","5":"10558362","6":"171003046"},{"1":"New York","2":"Male","3":"0-.99 years","4":"0","5":"115294","6":"1893263"},{"1":"New York","2":"Male","3":"01-04 years","4":"0","5":"472317","6":"7968874"},{"1":"New York","2":"Male","3":"05-14 years","4":"0","5":"1200716","6":"21520591"},{"1":"New York","2":"Male","3":"15-24 years","4":"15","5":"1246782","6":"21603341"},{"1":"New York","2":"Male","3":"25-34 years","4":"63","5":"1447714","6":"22791780"},{"1":"New York","2":"Male","3":"35-44 years","4":"152","5":"1275627","6":"21420401"},{"1":"New York","2":"Male","3":"45-54 years","4":"460","5":"1247585","6":"20492996"},{"1":"New York","2":"Male","3":"55-64 years","4":"1150","5":"1317389","6":"21075426"},{"1":"New York","2":"Male","3":"65-74 years","4":"1966","5":"918900","6":"15361155"},{"1":"New York","2":"Male","3":"75-84 years","4":"2315","5":"414966","6":"6989539"},{"1":"New York","2":"Male","3":"85 years and over","4":"2349","5":"9945484","6":"165470228"},{"1":"North Carolina","2":"Female","3":"0-.99 years","4":"0","5":"57037","6":"1809703"},{"1":"North Carolina","2":"Female","3":"01-04 years","4":"0","5":"235805","6":"7620035"},{"1":"North Carolina","2":"Female","3":"05-14 years","4":"0","5":"642459","6":"20518881"},{"1":"North Carolina","2":"Female","3":"15-24 years","4":"8","5":"664753","6":"20981911"},{"1":"North Carolina","2":"Female","3":"25-34 years","4":"20","5":"698426","6":"22449525"},{"1":"North Carolina","2":"Female","3":"35-44 years","4":"41","5":"668752","6":"21276445"},{"1":"North Carolina","2":"Female","3":"45-54 years","4":"148","5":"685694","6":"20563411"},{"1":"North Carolina","2":"Female","3":"55-64 years","4":"356","5":"704759","6":"21973114"},{"1":"North Carolina","2":"Female","3":"65-74 years","4":"842","5":"567510","6":"17208126"},{"1":"North Carolina","2":"Female","3":"75-84 years","4":"1180","5":"282917","6":"8832725"},{"1":"North Carolina","2":"Female","3":"85 years and over","4":"1705","5":"5434144","6":"171003046"},{"1":"North Carolina","2":"Male","3":"0-.99 years","4":"0","5":"59285","6":"1893263"},{"1":"North Carolina","2":"Male","3":"01-04 years","4":"0","5":"246197","6":"7968874"},{"1":"North Carolina","2":"Male","3":"05-14 years","4":"0","5":"670738","6":"21520591"},{"1":"North Carolina","2":"Male","3":"15-24 years","4":"9","5":"666203","6":"21603341"},{"1":"North Carolina","2":"Male","3":"25-34 years","4":"30","5":"664411","6":"22791780"},{"1":"North Carolina","2":"Male","3":"35-44 years","4":"92","5":"634330","6":"21420401"},{"1":"North Carolina","2":"Male","3":"45-54 years","4":"246","5":"665005","6":"20492996"},{"1":"North Carolina","2":"Male","3":"55-64 years","4":"586","5":"655123","6":"21075426"},{"1":"North Carolina","2":"Male","3":"65-74 years","4":"1137","5":"488214","6":"15361155"},{"1":"North Carolina","2":"Male","3":"75-84 years","4":"1364","5":"218532","6":"6989539"},{"1":"North Carolina","2":"Male","3":"85 years and over","4":"1032","5":"5086780","6":"165470228"},{"1":"North Dakota","2":"Female","3":"0-.99 years","4":"0","5":"5126","6":"1809703"},{"1":"North Dakota","2":"Female","3":"01-04 years","4":"0","5":"20801","6":"7620035"},{"1":"North Dakota","2":"Female","3":"05-14 years","4":"0","5":"51105","6":"20518881"},{"1":"North Dakota","2":"Female","3":"15-24 years","4":"1","5":"53122","6":"20981911"},{"1":"North Dakota","2":"Female","3":"25-34 years","4":"4","5":"52165","6":"22449525"},{"1":"North Dakota","2":"Female","3":"35-44 years","4":"9","5":"45245","6":"21276445"},{"1":"North Dakota","2":"Female","3":"45-54 years","4":"12","5":"37799","6":"20563411"},{"1":"North Dakota","2":"Female","3":"55-64 years","4":"35","5":"46348","6":"21973114"},{"1":"North Dakota","2":"Female","3":"65-74 years","4":"84","5":"35100","6":"17208126"},{"1":"North Dakota","2":"Female","3":"75-84 years","4":"183","5":"18719","6":"8832725"},{"1":"North Dakota","2":"Female","3":"85 years and over","4":"355","5":"389066","6":"171003046"},{"1":"North Dakota","2":"Male","3":"0-.99 years","4":"0","5":"5342","6":"1893263"},{"1":"North Dakota","2":"Male","3":"01-04 years","4":"0","5":"22261","6":"7968874"},{"1":"North Dakota","2":"Male","3":"05-14 years","4":"0","5":"53268","6":"21520591"},{"1":"North Dakota","2":"Male","3":"15-24 years","4":"2","5":"56390","6":"21603341"},{"1":"North Dakota","2":"Male","3":"25-34 years","4":"7","5":"58572","6":"22791780"},{"1":"North Dakota","2":"Male","3":"35-44 years","4":"15","5":"51466","6":"21420401"},{"1":"North Dakota","2":"Male","3":"45-54 years","4":"27","5":"41616","6":"20492996"},{"1":"North Dakota","2":"Male","3":"55-64 years","4":"88","5":"48326","6":"21075426"},{"1":"North Dakota","2":"Male","3":"65-74 years","4":"159","5":"35726","6":"15361155"},{"1":"North Dakota","2":"Male","3":"75-84 years","4":"225","5":"15581","6":"6989539"},{"1":"North Dakota","2":"Male","3":"85 years and over","4":"316","5":"400756","6":"165470228"},{"1":"Ohio","2":"Female","3":"0-.99 years","4":"0","5":"64724","6":"1809703"},{"1":"Ohio","2":"Female","3":"01-04 years","4":"0","5":"271706","6":"7620035"},{"1":"Ohio","2":"Female","3":"05-14 years","4":"0","5":"723342","6":"20518881"},{"1":"Ohio","2":"Female","3":"15-24 years","4":"13","5":"741681","6":"20981911"},{"1":"Ohio","2":"Female","3":"25-34 years","4":"20","5":"770250","6":"22449525"},{"1":"Ohio","2":"Female","3":"35-44 years","4":"54","5":"719153","6":"21276445"},{"1":"Ohio","2":"Female","3":"45-54 years","4":"136","5":"723898","6":"20563411"},{"1":"Ohio","2":"Female","3":"55-64 years","4":"486","5":"823469","6":"21973114"},{"1":"Ohio","2":"Female","3":"65-74 years","4":"1116","5":"652606","6":"17208126"},{"1":"Ohio","2":"Female","3":"75-84 years","4":"2117","5":"333819","6":"8832725"},{"1":"Ohio","2":"Female","3":"85 years and over","4":"3361","5":"6128154","6":"171003046"},{"1":"Ohio","2":"Male","3":"0-.99 years","4":"0","5":"67633","6":"1893263"},{"1":"Ohio","2":"Male","3":"01-04 years","4":"0","5":"283503","6":"7968874"},{"1":"Ohio","2":"Male","3":"05-14 years","4":"0","5":"759222","6":"21520591"},{"1":"Ohio","2":"Male","3":"15-24 years","4":"16","5":"771039","6":"21603341"},{"1":"Ohio","2":"Male","3":"25-34 years","4":"30","5":"780075","6":"22791780"},{"1":"Ohio","2":"Male","3":"35-44 years","4":"77","5":"719310","6":"21420401"},{"1":"Ohio","2":"Male","3":"45-54 years","4":"249","5":"723571","6":"20492996"},{"1":"Ohio","2":"Male","3":"55-64 years","4":"809","5":"791329","6":"21075426"},{"1":"Ohio","2":"Male","3":"65-74 years","4":"1846","5":"585499","6":"15361155"},{"1":"Ohio","2":"Male","3":"75-84 years","4":"2483","5":"253532","6":"6989539"},{"1":"Ohio","2":"Male","3":"85 years and over","4":"2300","5":"5894903","6":"165470228"},{"1":"Oklahoma","2":"Female","3":"0-.99 years","4":"0","5":"23401","6":"1809703"},{"1":"Oklahoma","2":"Female","3":"01-04 years","4":"0","5":"98928","6":"7620035"},{"1":"Oklahoma","2":"Female","3":"05-14 years","4":"0","5":"267677","6":"20518881"},{"1":"Oklahoma","2":"Female","3":"15-24 years","4":"4","5":"263547","6":"20981911"},{"1":"Oklahoma","2":"Female","3":"25-34 years","4":"12","5":"262127","6":"22449525"},{"1":"Oklahoma","2":"Female","3":"35-44 years","4":"36","5":"250803","6":"21276445"},{"1":"Oklahoma","2":"Female","3":"45-54 years","4":"93","5":"224605","6":"20563411"},{"1":"Oklahoma","2":"Female","3":"55-64 years","4":"248","5":"249768","6":"21973114"},{"1":"Oklahoma","2":"Female","3":"65-74 years","4":"525","5":"197695","6":"17208126"},{"1":"Oklahoma","2":"Female","3":"75-84 years","4":"672","5":"104533","6":"8832725"},{"1":"Oklahoma","2":"Female","3":"85 years and over","4":"817","5":"2028626","6":"171003046"},{"1":"Oklahoma","2":"Male","3":"0-.99 years","4":"0","5":"24439","6":"1893263"},{"1":"Oklahoma","2":"Male","3":"01-04 years","4":"0","5":"104107","6":"7968874"},{"1":"Oklahoma","2":"Male","3":"05-14 years","4":"0","5":"280848","6":"21520591"},{"1":"Oklahoma","2":"Male","3":"15-24 years","4":"6","5":"275806","6":"21603341"},{"1":"Oklahoma","2":"Male","3":"25-34 years","4":"21","5":"266153","6":"22791780"},{"1":"Oklahoma","2":"Male","3":"35-44 years","4":"51","5":"256030","6":"21420401"},{"1":"Oklahoma","2":"Male","3":"45-54 years","4":"146","5":"228403","6":"20492996"},{"1":"Oklahoma","2":"Male","3":"55-64 years","4":"369","5":"239899","6":"21075426"},{"1":"Oklahoma","2":"Male","3":"65-74 years","4":"710","5":"177006","6":"15361155"},{"1":"Oklahoma","2":"Male","3":"75-84 years","4":"835","5":"82505","6":"6989539"},{"1":"Oklahoma","2":"Male","3":"85 years and over","4":"703","5":"1984334","6":"165470228"},{"1":"Oregon","2":"Female","3":"0-.99 years","4":"0","5":"20359","6":"1809703"},{"1":"Oregon","2":"Female","3":"01-04 years","4":"0","5":"86870","6":"7620035"},{"1":"Oregon","2":"Female","3":"05-14 years","4":"0","5":"243751","6":"20518881"},{"1":"Oregon","2":"Female","3":"15-24 years","4":"0","5":"250973","6":"20981911"},{"1":"Oregon","2":"Female","3":"25-34 years","4":"4","5":"294612","6":"22449525"},{"1":"Oregon","2":"Female","3":"35-44 years","4":"10","5":"287547","6":"21276445"},{"1":"Oregon","2":"Female","3":"45-54 years","4":"15","5":"254198","6":"20563411"},{"1":"Oregon","2":"Female","3":"55-64 years","4":"52","5":"274701","6":"21973114"},{"1":"Oregon","2":"Female","3":"65-74 years","4":"127","5":"248910","6":"17208126"},{"1":"Oregon","2":"Female","3":"75-84 years","4":"208","5":"117054","6":"8832725"},{"1":"Oregon","2":"Female","3":"85 years and over","4":"345","5":"2175471","6":"171003046"},{"1":"Oregon","2":"Male","3":"0-.99 years","4":"0","5":"21317","6":"1893263"},{"1":"Oregon","2":"Male","3":"01-04 years","4":"0","5":"91327","6":"7968874"},{"1":"Oregon","2":"Male","3":"05-14 years","4":"0","5":"256966","6":"21520591"},{"1":"Oregon","2":"Male","3":"15-24 years","4":"2","5":"261690","6":"21603341"},{"1":"Oregon","2":"Male","3":"25-34 years","4":"7","5":"304404","6":"22791780"},{"1":"Oregon","2":"Male","3":"35-44 years","4":"12","5":"297396","6":"21420401"},{"1":"Oregon","2":"Male","3":"45-54 years","4":"41","5":"264155","6":"20492996"},{"1":"Oregon","2":"Male","3":"55-64 years","4":"121","5":"262760","6":"21075426"},{"1":"Oregon","2":"Male","3":"65-74 years","4":"154","5":"227036","6":"15361155"},{"1":"Oregon","2":"Male","3":"75-84 years","4":"273","5":"100153","6":"6989539"},{"1":"Oregon","2":"Male","3":"85 years and over","4":"245","5":"2145512","6":"165470228"},{"1":"Pennsylvania","2":"Female","3":"0-.99 years","4":"0","5":"65637","6":"1809703"},{"1":"Pennsylvania","2":"Female","3":"01-04 years","4":"0","5":"274563","6":"7620035"},{"1":"Pennsylvania","2":"Female","3":"05-14 years","4":"0","5":"743868","6":"20518881"},{"1":"Pennsylvania","2":"Female","3":"15-24 years","4":"16","5":"798021","6":"20981911"},{"1":"Pennsylvania","2":"Female","3":"25-34 years","4":"13","5":"841778","6":"22449525"},{"1":"Pennsylvania","2":"Female","3":"35-44 years","4":"43","5":"783772","6":"21276445"},{"1":"Pennsylvania","2":"Female","3":"45-54 years","4":"170","5":"803371","6":"20563411"},{"1":"Pennsylvania","2":"Female","3":"55-64 years","4":"547","5":"936383","6":"21973114"},{"1":"Pennsylvania","2":"Female","3":"65-74 years","4":"1342","5":"745762","6":"17208126"},{"1":"Pennsylvania","2":"Female","3":"75-84 years","4":"2309","5":"396134","6":"8832725"},{"1":"Pennsylvania","2":"Female","3":"85 years and over","4":"4857","5":"6786989","6":"171003046"},{"1":"Pennsylvania","2":"Male","3":"0-.99 years","4":"0","5":"68563","6":"1893263"},{"1":"Pennsylvania","2":"Male","3":"01-04 years","4":"0","5":"288290","6":"7968874"},{"1":"Pennsylvania","2":"Male","3":"05-14 years","4":"0","5":"782113","6":"21520591"},{"1":"Pennsylvania","2":"Male","3":"15-24 years","4":"12","5":"821812","6":"21603341"},{"1":"Pennsylvania","2":"Male","3":"25-34 years","4":"47","5":"866921","6":"22791780"},{"1":"Pennsylvania","2":"Male","3":"35-44 years","4":"92","5":"793740","6":"21420401"},{"1":"Pennsylvania","2":"Male","3":"45-54 years","4":"305","5":"802220","6":"20492996"},{"1":"Pennsylvania","2":"Male","3":"55-64 years","4":"977","5":"902075","6":"21075426"},{"1":"Pennsylvania","2":"Male","3":"65-74 years","4":"1977","5":"674687","6":"15361155"},{"1":"Pennsylvania","2":"Male","3":"75-84 years","4":"2732","5":"302379","6":"6989539"},{"1":"Pennsylvania","2":"Male","3":"85 years and over","4":"2977","5":"6506292","6":"165470228"},{"1":"Rhode Island","2":"Female","3":"0-.99 years","4":"0","5":"5183","6":"1809703"},{"1":"Rhode Island","2":"Female","3":"01-04 years","4":"0","5":"21798","6":"7620035"},{"1":"Rhode Island","2":"Female","3":"05-14 years","4":"0","5":"57454","6":"20518881"},{"1":"Rhode Island","2":"Female","3":"15-24 years","4":"0","5":"74912","6":"20981911"},{"1":"Rhode Island","2":"Female","3":"25-34 years","4":"6","5":"74138","6":"22449525"},{"1":"Rhode Island","2":"Female","3":"35-44 years","4":"13","5":"65898","6":"21276445"},{"1":"Rhode Island","2":"Female","3":"45-54 years","4":"16","5":"69997","6":"20563411"},{"1":"Rhode Island","2":"Female","3":"55-64 years","4":"41","5":"80667","6":"21973114"},{"1":"Rhode Island","2":"Female","3":"65-74 years","4":"140","5":"60066","6":"17208126"},{"1":"Rhode Island","2":"Female","3":"75-84 years","4":"233","5":"31151","6":"8832725"},{"1":"Rhode Island","2":"Female","3":"85 years and over","4":"552","5":"575724","6":"171003046"},{"1":"Rhode Island","2":"Male","3":"0-.99 years","4":"0","5":"5378","6":"1893263"},{"1":"Rhode Island","2":"Male","3":"01-04 years","4":"0","5":"22757","6":"7968874"},{"1":"Rhode Island","2":"Male","3":"05-14 years","4":"0","5":"60518","6":"21520591"},{"1":"Rhode Island","2":"Male","3":"15-24 years","4":"0","5":"74760","6":"21603341"},{"1":"Rhode Island","2":"Male","3":"25-34 years","4":"8","5":"76264","6":"22791780"},{"1":"Rhode Island","2":"Male","3":"35-44 years","4":"14","5":"66702","6":"21420401"},{"1":"Rhode Island","2":"Male","3":"45-54 years","4":"21","5":"67388","6":"20492996"},{"1":"Rhode Island","2":"Male","3":"55-64 years","4":"92","5":"75517","6":"21075426"},{"1":"Rhode Island","2":"Male","3":"65-74 years","4":"204","5":"53810","6":"15361155"},{"1":"Rhode Island","2":"Male","3":"75-84 years","4":"262","5":"23642","6":"6989539"},{"1":"Rhode Island","2":"Male","3":"85 years and over","4":"333","5":"543052","6":"165470228"},{"1":"South Carolina","2":"Female","3":"0-.99 years","4":"0","5":"26953","6":"1809703"},{"1":"South Carolina","2":"Female","3":"01-04 years","4":"0","5":"112955","6":"7620035"},{"1":"South Carolina","2":"Female","3":"05-14 years","4":"0","5":"313952","6":"20518881"},{"1":"South Carolina","2":"Female","3":"15-24 years","4":"5","5":"317850","6":"20981911"},{"1":"South Carolina","2":"Female","3":"25-34 years","4":"14","5":"337185","6":"22449525"},{"1":"South Carolina","2":"Female","3":"35-44 years","4":"35","5":"319776","6":"21276445"},{"1":"South Carolina","2":"Female","3":"45-54 years","4":"86","5":"324018","6":"20563411"},{"1":"South Carolina","2":"Female","3":"55-64 years","4":"310","5":"360292","6":"21973114"},{"1":"South Carolina","2":"Female","3":"65-74 years","4":"599","5":"308935","6":"17208126"},{"1":"South Carolina","2":"Female","3":"75-84 years","4":"762","5":"149458","6":"8832725"},{"1":"South Carolina","2":"Female","3":"85 years and over","4":"917","5":"2680212","6":"171003046"},{"1":"South Carolina","2":"Male","3":"0-.99 years","4":"0","5":"28221","6":"1893263"},{"1":"South Carolina","2":"Male","3":"01-04 years","4":"0","5":"118073","6":"7968874"},{"1":"South Carolina","2":"Male","3":"05-14 years","4":"0","5":"325774","6":"21520591"},{"1":"South Carolina","2":"Male","3":"15-24 years","4":"6","5":"322315","6":"21603341"},{"1":"South Carolina","2":"Male","3":"25-34 years","4":"15","5":"317288","6":"22791780"},{"1":"South Carolina","2":"Male","3":"35-44 years","4":"68","5":"303151","6":"21420401"},{"1":"South Carolina","2":"Male","3":"45-54 years","4":"128","5":"308552","6":"20492996"},{"1":"South Carolina","2":"Male","3":"55-64 years","4":"395","5":"327393","6":"21075426"},{"1":"South Carolina","2":"Male","3":"65-74 years","4":"764","5":"266741","6":"15361155"},{"1":"South Carolina","2":"Male","3":"75-84 years","4":"984","5":"120837","6":"6989539"},{"1":"South Carolina","2":"Male","3":"85 years and over","4":"616","5":"2498103","6":"165470228"},{"1":"South Dakota","2":"Female","3":"0-.99 years","4":"0","5":"5686","6":"1809703"},{"1":"South Dakota","2":"Female","3":"01-04 years","4":"0","5":"23521","6":"7620035"},{"1":"South Dakota","2":"Female","3":"05-14 years","4":"0","5":"60234","6":"20518881"},{"1":"South Dakota","2":"Female","3":"15-24 years","4":"1","5":"55861","6":"20981911"},{"1":"South Dakota","2":"Female","3":"25-34 years","4":"5","5":"53834","6":"22449525"},{"1":"South Dakota","2":"Female","3":"35-44 years","4":"11","5":"52022","6":"21276445"},{"1":"South Dakota","2":"Female","3":"45-54 years","4":"29","5":"45659","6":"20563411"},{"1":"South Dakota","2":"Female","3":"55-64 years","4":"54","5":"58269","6":"21973114"},{"1":"South Dakota","2":"Female","3":"65-74 years","4":"144","5":"46198","6":"17208126"},{"1":"South Dakota","2":"Female","3":"75-84 years","4":"176","5":"22034","6":"8832725"},{"1":"South Dakota","2":"Female","3":"85 years and over","4":"386","5":"449006","6":"171003046"},{"1":"South Dakota","2":"Male","3":"0-.99 years","4":"0","5":"5908","6":"1893263"},{"1":"South Dakota","2":"Male","3":"01-04 years","4":"0","5":"24441","6":"7968874"},{"1":"South Dakota","2":"Male","3":"05-14 years","4":"0","5":"63650","6":"21520591"},{"1":"South Dakota","2":"Male","3":"15-24 years","4":"2","5":"59555","6":"21603341"},{"1":"South Dakota","2":"Male","3":"25-34 years","4":"8","5":"57632","6":"22791780"},{"1":"South Dakota","2":"Male","3":"35-44 years","4":"20","5":"56579","6":"21420401"},{"1":"South Dakota","2":"Male","3":"45-54 years","4":"29","5":"48837","6":"20492996"},{"1":"South Dakota","2":"Male","3":"55-64 years","4":"98","5":"59220","6":"21075426"},{"1":"South Dakota","2":"Male","3":"65-74 years","4":"181","5":"47094","6":"15361155"},{"1":"South Dakota","2":"Male","3":"75-84 years","4":"268","5":"18623","6":"6989539"},{"1":"South Dakota","2":"Male","3":"85 years and over","4":"323","5":"454819","6":"165470228"},{"1":"Tennessee","2":"Female","3":"0-.99 years","4":"0","5":"39128","6":"1809703"},{"1":"Tennessee","2":"Female","3":"01-04 years","4":"0","5":"161691","6":"7620035"},{"1":"Tennessee","2":"Female","3":"05-14 years","4":"0","5":"427660","6":"20518881"},{"1":"Tennessee","2":"Female","3":"15-24 years","4":"6","5":"435319","6":"20981911"},{"1":"Tennessee","2":"Female","3":"25-34 years","4":"18","5":"478547","6":"22449525"},{"1":"Tennessee","2":"Female","3":"35-44 years","4":"45","5":"438504","6":"21276445"},{"1":"Tennessee","2":"Female","3":"45-54 years","4":"149","5":"441312","6":"20563411"},{"1":"Tennessee","2":"Female","3":"55-64 years","4":"404","5":"468543","6":"21973114"},{"1":"Tennessee","2":"Female","3":"65-74 years","4":"741","5":"371761","6":"17208126"},{"1":"Tennessee","2":"Female","3":"75-84 years","4":"1032","5":"186976","6":"8832725"},{"1":"Tennessee","2":"Female","3":"85 years and over","4":"1167","5":"3594959","6":"171003046"},{"1":"Tennessee","2":"Male","3":"0-.99 years","4":"0","5":"40682","6":"1893263"},{"1":"Tennessee","2":"Male","3":"01-04 years","4":"0","5":"169096","6":"7968874"},{"1":"Tennessee","2":"Male","3":"05-14 years","4":"0","5":"448022","6":"21520591"},{"1":"Tennessee","2":"Male","3":"15-24 years","4":"9","5":"442826","6":"21603341"},{"1":"Tennessee","2":"Male","3":"25-34 years","4":"32","5":"467166","6":"22791780"},{"1":"Tennessee","2":"Male","3":"35-44 years","4":"82","5":"430019","6":"21420401"},{"1":"Tennessee","2":"Male","3":"45-54 years","4":"229","5":"434026","6":"20492996"},{"1":"Tennessee","2":"Male","3":"55-64 years","4":"599","5":"438494","6":"21075426"},{"1":"Tennessee","2":"Male","3":"65-74 years","4":"1141","5":"327449","6":"15361155"},{"1":"Tennessee","2":"Male","3":"75-84 years","4":"1369","5":"147348","6":"6989539"},{"1":"Tennessee","2":"Male","3":"85 years and over","4":"897","5":"3421934","6":"165470228"},{"1":"Texas","2":"Female","3":"0-.99 years","4":"0","5":"179307","6":"1809703"},{"1":"Texas","2":"Female","3":"01-04 years","4":"0","5":"768323","6":"7620035"},{"1":"Texas","2":"Female","3":"05-14 years","4":"0","5":"2076018","6":"20518881"},{"1":"Texas","2":"Female","3":"15-24 years","4":"31","5":"1985149","6":"20981911"},{"1":"Texas","2":"Female","3":"25-34 years","4":"126","5":"2071096","6":"22449525"},{"1":"Texas","2":"Female","3":"35-44 years","4":"347","5":"1990957","6":"21276445"},{"1":"Texas","2":"Female","3":"45-54 years","4":"822","5":"1792476","6":"20563411"},{"1":"Texas","2":"Female","3":"55-64 years","4":"1925","5":"1684290","6":"21973114"},{"1":"Texas","2":"Female","3":"65-74 years","4":"3203","5":"1230807","6":"17208126"},{"1":"Texas","2":"Female","3":"75-84 years","4":"3660","5":"598956","6":"8832725"},{"1":"Texas","2":"Female","3":"85 years and over","4":"4023","5":"14856769","6":"171003046"},{"1":"Texas","2":"Male","3":"0-.99 years","4":"0","5":"187244","6":"1893263"},{"1":"Texas","2":"Male","3":"01-04 years","4":"0","5":"799643","6":"7968874"},{"1":"Texas","2":"Male","3":"05-14 years","4":"0","5":"2169393","6":"21520591"},{"1":"Texas","2":"Male","3":"15-24 years","4":"46","5":"2058443","6":"21603341"},{"1":"Texas","2":"Male","3":"25-34 years","4":"227","5":"2113996","6":"22791780"},{"1":"Texas","2":"Male","3":"35-44 years","4":"618","5":"2028064","6":"21420401"},{"1":"Texas","2":"Male","3":"45-54 years","4":"1688","5":"1802755","6":"20492996"},{"1":"Texas","2":"Male","3":"55-64 years","4":"3429","5":"1634652","6":"21075426"},{"1":"Texas","2":"Male","3":"65-74 years","4":"5048","5":"1095333","6":"15361155"},{"1":"Texas","2":"Male","3":"75-84 years","4":"5002","5":"473084","6":"6989539"},{"1":"Texas","2":"Male","3":"85 years and over","4":"3325","5":"14637111","6":"165470228"},{"1":"Utah","2":"Female","3":"0-.99 years","4":"0","5":"23092","6":"1809703"},{"1":"Utah","2":"Female","3":"01-04 years","4":"0","5":"95254","6":"7620035"},{"1":"Utah","2":"Female","3":"05-14 years","4":"0","5":"262955","6":"20518881"},{"1":"Utah","2":"Female","3":"15-24 years","4":"1","5":"263100","6":"20981911"},{"1":"Utah","2":"Female","3":"25-34 years","4":"4","5":"233091","6":"22449525"},{"1":"Utah","2":"Female","3":"35-44 years","4":"19","5":"223607","6":"21276445"},{"1":"Utah","2":"Female","3":"45-54 years","4":"33","5":"167450","6":"20563411"},{"1":"Utah","2":"Female","3":"55-64 years","4":"61","5":"154934","6":"21973114"},{"1":"Utah","2":"Female","3":"65-74 years","4":"136","5":"118008","6":"17208126"},{"1":"Utah","2":"Female","3":"75-84 years","4":"172","5":"57759","6":"8832725"},{"1":"Utah","2":"Female","3":"85 years and over","4":"237","5":"1641360","6":"171003046"},{"1":"Utah","2":"Male","3":"0-.99 years","4":"0","5":"24439","6":"1893263"},{"1":"Utah","2":"Male","3":"01-04 years","4":"0","5":"99920","6":"7968874"},{"1":"Utah","2":"Male","3":"05-14 years","4":"0","5":"279320","6":"21520591"},{"1":"Utah","2":"Male","3":"15-24 years","4":"2","5":"273370","6":"21603341"},{"1":"Utah","2":"Male","3":"25-34 years","4":"13","5":"241805","6":"22791780"},{"1":"Utah","2":"Male","3":"35-44 years","4":"29","5":"234090","6":"21420401"},{"1":"Utah","2":"Male","3":"45-54 years","4":"65","5":"176825","6":"20492996"},{"1":"Utah","2":"Male","3":"55-64 years","4":"125","5":"153639","6":"21075426"},{"1":"Utah","2":"Male","3":"65-74 years","4":"237","5":"111393","6":"15361155"},{"1":"Utah","2":"Male","3":"75-84 years","4":"284","5":"49407","6":"6989539"},{"1":"Utah","2":"Male","3":"85 years and over","4":"232","5":"1673666","6":"165470228"},{"1":"Vermont","2":"Female","3":"0-.99 years","4":"0","5":"2665","6":"1809703"},{"1":"Vermont","2":"Female","3":"01-04 years","4":"0","5":"11552","6":"7620035"},{"1":"Vermont","2":"Female","3":"05-14 years","4":"0","5":"32480","6":"20518881"},{"1":"Vermont","2":"Female","3":"15-24 years","4":"0","5":"42262","6":"20981911"},{"1":"Vermont","2":"Female","3":"25-34 years","4":"0","5":"37689","6":"22449525"},{"1":"Vermont","2":"Female","3":"35-44 years","4":"1","5":"38018","6":"21276445"},{"1":"Vermont","2":"Female","3":"45-54 years","4":"3","5":"39639","6":"20563411"},{"1":"Vermont","2":"Female","3":"55-64 years","4":"9","5":"49722","6":"21973114"},{"1":"Vermont","2":"Female","3":"65-74 years","4":"17","5":"40896","6":"17208126"},{"1":"Vermont","2":"Female","3":"75-84 years","4":"21","5":"19559","6":"8832725"},{"1":"Vermont","2":"Female","3":"85 years and over","4":"42","5":"331840","6":"171003046"},{"1":"Vermont","2":"Male","3":"0-.99 years","4":"0","5":"2802","6":"1893263"},{"1":"Vermont","2":"Male","3":"01-04 years","4":"0","5":"12001","6":"7968874"},{"1":"Vermont","2":"Male","3":"05-14 years","4":"0","5":"35063","6":"21520591"},{"1":"Vermont","2":"Male","3":"15-24 years","4":"0","5":"44439","6":"21603341"},{"1":"Vermont","2":"Male","3":"25-34 years","4":"0","5":"39047","6":"22791780"},{"1":"Vermont","2":"Male","3":"35-44 years","4":"2","5":"37711","6":"21420401"},{"1":"Vermont","2":"Male","3":"45-54 years","4":"5","5":"39742","6":"20492996"},{"1":"Vermont","2":"Male","3":"55-64 years","4":"11","5":"48185","6":"21075426"},{"1":"Vermont","2":"Male","3":"65-74 years","4":"15","5":"39066","6":"15361155"},{"1":"Vermont","2":"Male","3":"75-84 years","4":"26","5":"16748","6":"6989539"},{"1":"Vermont","2":"Male","3":"85 years and over","4":"22","5":"324376","6":"165470228"},{"1":"Virginia","2":"Female","3":"0-.99 years","4":"0","5":"47466","6":"1809703"},{"1":"Virginia","2":"Female","3":"01-04 years","4":"0","5":"199153","6":"7620035"},{"1":"Virginia","2":"Female","3":"05-14 years","4":"0","5":"523470","6":"20518881"},{"1":"Virginia","2":"Female","3":"15-24 years","4":"5","5":"542731","6":"20981911"},{"1":"Virginia","2":"Female","3":"25-34 years","4":"17","5":"575776","6":"22449525"},{"1":"Virginia","2":"Female","3":"35-44 years","4":"33","5":"567393","6":"21276445"},{"1":"Virginia","2":"Female","3":"45-54 years","4":"86","5":"552802","6":"20563411"},{"1":"Virginia","2":"Female","3":"55-64 years","4":"220","5":"579135","6":"21973114"},{"1":"Virginia","2":"Female","3":"65-74 years","4":"516","5":"438837","6":"17208126"},{"1":"Virginia","2":"Female","3":"75-84 years","4":"796","5":"224366","6":"8832725"},{"1":"Virginia","2":"Female","3":"85 years and over","4":"1320","5":"4436651","6":"171003046"},{"1":"Virginia","2":"Male","3":"0-.99 years","4":"0","5":"49873","6":"1893263"},{"1":"Virginia","2":"Male","3":"01-04 years","4":"0","5":"208143","6":"7968874"},{"1":"Virginia","2":"Male","3":"05-14 years","4":"0","5":"551336","6":"21520591"},{"1":"Virginia","2":"Male","3":"15-24 years","4":"7","5":"554778","6":"21603341"},{"1":"Virginia","2":"Male","3":"25-34 years","4":"16","5":"566460","6":"22791780"},{"1":"Virginia","2":"Male","3":"35-44 years","4":"46","5":"553959","6":"21420401"},{"1":"Virginia","2":"Male","3":"45-54 years","4":"157","5":"542169","6":"20492996"},{"1":"Virginia","2":"Male","3":"55-64 years","4":"423","5":"551137","6":"21075426"},{"1":"Virginia","2":"Male","3":"65-74 years","4":"748","5":"387413","6":"15361155"},{"1":"Virginia","2":"Male","3":"75-84 years","4":"924","5":"176237","6":"6989539"},{"1":"Virginia","2":"Male","3":"85 years and over","4":"853","5":"4242891","6":"165470228"},{"1":"Washington","2":"Female","3":"0-.99 years","4":"0","5":"41961","6":"1809703"},{"1":"Washington","2":"Female","3":"01-04 years","4":"0","5":"177159","6":"7620035"},{"1":"Washington","2":"Female","3":"05-14 years","4":"0","5":"470211","6":"20518881"},{"1":"Washington","2":"Female","3":"15-24 years","4":"3","5":"452394","6":"20981911"},{"1":"Washington","2":"Female","3":"25-34 years","4":"10","5":"561428","6":"22449525"},{"1":"Washington","2":"Female","3":"35-44 years","4":"19","5":"520384","6":"21276445"},{"1":"Washington","2":"Female","3":"45-54 years","4":"46","5":"458302","6":"20563411"},{"1":"Washington","2":"Female","3":"55-64 years","4":"133","5":"485575","6":"21973114"},{"1":"Washington","2":"Female","3":"65-74 years","4":"303","5":"394900","6":"17208126"},{"1":"Washington","2":"Female","3":"75-84 years","4":"461","5":"184208","6":"8832725"},{"1":"Washington","2":"Female","3":"85 years and over","4":"733","5":"3903238","6":"171003046"},{"1":"Washington","2":"Male","3":"0-.99 years","4":"0","5":"44025","6":"1893263"},{"1":"Washington","2":"Male","3":"01-04 years","4":"0","5":"186173","6":"7968874"},{"1":"Washington","2":"Male","3":"05-14 years","4":"0","5":"495239","6":"21520591"},{"1":"Washington","2":"Male","3":"15-24 years","4":"4","5":"473700","6":"21603341"},{"1":"Washington","2":"Male","3":"25-34 years","4":"11","5":"591268","6":"22791780"},{"1":"Washington","2":"Male","3":"35-44 years","4":"38","5":"542887","6":"21420401"},{"1":"Washington","2":"Male","3":"45-54 years","4":"99","5":"475304","6":"20492996"},{"1":"Washington","2":"Male","3":"55-64 years","4":"238","5":"479102","6":"21075426"},{"1":"Washington","2":"Male","3":"65-74 years","4":"453","5":"360977","6":"15361155"},{"1":"Washington","2":"Male","3":"75-84 years","4":"562","5":"155708","6":"6989539"},{"1":"Washington","2":"Male","3":"85 years and over","4":"595","5":"3895729","6":"165470228"},{"1":"West Virginia","2":"Female","3":"0-.99 years","4":"0","5":"8531","6":"1809703"},{"1":"West Virginia","2":"Female","3":"01-04 years","4":"0","5":"35815","6":"7620035"},{"1":"West Virginia","2":"Female","3":"05-14 years","4":"0","5":"100491","6":"20518881"},{"1":"West Virginia","2":"Female","3":"15-24 years","4":"0","5":"105789","6":"20981911"},{"1":"West Virginia","2":"Female","3":"25-34 years","4":"5","5":"103148","6":"22449525"},{"1":"West Virginia","2":"Female","3":"35-44 years","4":"10","5":"105831","6":"21276445"},{"1":"West Virginia","2":"Female","3":"45-54 years","4":"18","5":"112259","6":"20563411"},{"1":"West Virginia","2":"Female","3":"55-64 years","4":"57","5":"128317","6":"21973114"},{"1":"West Virginia","2":"Female","3":"65-74 years","4":"161","5":"114721","6":"17208126"},{"1":"West Virginia","2":"Female","3":"75-84 years","4":"222","5":"58246","6":"8832725"},{"1":"West Virginia","2":"Female","3":"85 years and over","4":"308","5":"920390","6":"171003046"},{"1":"West Virginia","2":"Male","3":"0-.99 years","4":"0","5":"8880","6":"1893263"},{"1":"West Virginia","2":"Male","3":"01-04 years","4":"0","5":"37769","6":"7968874"},{"1":"West Virginia","2":"Male","3":"05-14 years","4":"0","5":"106207","6":"21520591"},{"1":"West Virginia","2":"Male","3":"15-24 years","4":"2","5":"113407","6":"21603341"},{"1":"West Virginia","2":"Male","3":"25-34 years","4":"7","5":"110276","6":"22791780"},{"1":"West Virginia","2":"Male","3":"35-44 years","4":"18","5":"109527","6":"21420401"},{"1":"West Virginia","2":"Male","3":"45-54 years","4":"34","5":"116217","6":"20492996"},{"1":"West Virginia","2":"Male","3":"55-64 years","4":"72","5":"124424","6":"21075426"},{"1":"West Virginia","2":"Male","3":"65-74 years","4":"208","5":"106629","6":"15361155"},{"1":"West Virginia","2":"Male","3":"75-84 years","4":"274","5":"48149","6":"6989539"},{"1":"West Virginia","2":"Male","3":"85 years and over","4":"195","5":"907769","6":"165470228"},{"1":"Wisconsin","2":"Female","3":"0-.99 years","4":"0","5":"30769","6":"1809703"},{"1":"Wisconsin","2":"Female","3":"01-04 years","4":"0","5":"129489","6":"7620035"},{"1":"Wisconsin","2":"Female","3":"05-14 years","4":"0","5":"356333","6":"20518881"},{"1":"Wisconsin","2":"Female","3":"15-24 years","4":"5","5":"383361","6":"20981911"},{"1":"Wisconsin","2":"Female","3":"25-34 years","4":"13","5":"359090","6":"22449525"},{"1":"Wisconsin","2":"Female","3":"35-44 years","4":"22","5":"361298","6":"21276445"},{"1":"Wisconsin","2":"Female","3":"45-54 years","4":"67","5":"350926","6":"20563411"},{"1":"Wisconsin","2":"Female","3":"55-64 years","4":"193","5":"417727","6":"21973114"},{"1":"Wisconsin","2":"Female","3":"65-74 years","4":"430","5":"317838","6":"17208126"},{"1":"Wisconsin","2":"Female","3":"75-84 years","4":"796","5":"159740","6":"8832725"},{"1":"Wisconsin","2":"Female","3":"85 years and over","4":"1409","5":"3018939","6":"171003046"},{"1":"Wisconsin","2":"Male","3":"0-.99 years","4":"0","5":"32237","6":"1893263"},{"1":"Wisconsin","2":"Male","3":"01-04 years","4":"0","5":"135327","6":"7968874"},{"1":"Wisconsin","2":"Male","3":"05-14 years","4":"0","5":"375579","6":"21520591"},{"1":"Wisconsin","2":"Male","3":"15-24 years","4":"7","5":"397577","6":"21603341"},{"1":"Wisconsin","2":"Male","3":"25-34 years","4":"17","5":"376929","6":"22791780"},{"1":"Wisconsin","2":"Male","3":"35-44 years","4":"35","5":"374839","6":"21420401"},{"1":"Wisconsin","2":"Male","3":"45-54 years","4":"120","5":"362914","6":"20492996"},{"1":"Wisconsin","2":"Male","3":"55-64 years","4":"322","5":"417625","6":"21075426"},{"1":"Wisconsin","2":"Male","3":"65-74 years","4":"741","5":"306056","6":"15361155"},{"1":"Wisconsin","2":"Male","3":"75-84 years","4":"1006","5":"131905","6":"6989539"},{"1":"Wisconsin","2":"Male","3":"85 years and over","4":"1106","5":"2993702","6":"165470228"},{"1":"Wyoming","2":"Female","3":"0-.99 years","4":"0","5":"3095","6":"1809703"},{"1":"Wyoming","2":"Female","3":"01-04 years","4":"0","5":"13162","6":"7620035"},{"1":"Wyoming","2":"Female","3":"05-14 years","4":"0","5":"37495","6":"20518881"},{"1":"Wyoming","2":"Female","3":"15-24 years","4":"0","5":"35157","6":"20981911"},{"1":"Wyoming","2":"Female","3":"25-34 years","4":"1","5":"35540","6":"22449525"},{"1":"Wyoming","2":"Female","3":"35-44 years","4":"3","5":"36189","6":"21276445"},{"1":"Wyoming","2":"Female","3":"45-54 years","4":"8","5":"30656","6":"20563411"},{"1":"Wyoming","2":"Female","3":"55-64 years","4":"17","5":"38276","6":"21973114"},{"1":"Wyoming","2":"Female","3":"65-74 years","4":"42","5":"31026","6":"17208126"},{"1":"Wyoming","2":"Female","3":"75-84 years","4":"68","5":"14400","6":"8832725"},{"1":"Wyoming","2":"Female","3":"85 years and over","4":"87","5":"287452","6":"171003046"},{"1":"Wyoming","2":"Male","3":"0-.99 years","4":"0","5":"3170","6":"1893263"},{"1":"Wyoming","2":"Male","3":"01-04 years","4":"0","5":"13918","6":"7968874"},{"1":"Wyoming","2":"Male","3":"05-14 years","4":"0","5":"39922","6":"21520591"},{"1":"Wyoming","2":"Male","3":"15-24 years","4":"0","5":"38218","6":"21603341"},{"1":"Wyoming","2":"Male","3":"25-34 years","4":"2","5":"37662","6":"22791780"},{"1":"Wyoming","2":"Male","3":"35-44 years","4":"5","5":"39058","6":"21420401"},{"1":"Wyoming","2":"Male","3":"45-54 years","4":"11","5":"33373","6":"20492996"},{"1":"Wyoming","2":"Male","3":"55-64 years","4":"30","5":"39142","6":"21075426"},{"1":"Wyoming","2":"Male","3":"65-74 years","4":"55","5":"32163","6":"15361155"},{"1":"Wyoming","2":"Male","3":"75-84 years","4":"71","5":"13141","6":"6989539"},{"1":"Wyoming","2":"Male","3":"85 years and over","4":"61","5":"297329","6":"165470228"}],"options":{"columns":{"min":{},"max":[10]},"rows":{"min":[10],"max":[10]},"pages":{}}}
+  </script>
+</div>
+</div>
+</div>
+</div>
+<div id="tabset-1-2" class="tab-pane" role="tabpanel" aria-labelledby="tabset-1-2-tab">
+<p>The <code>stndrd_pop</code> object is a slice of the <code>study_pop</code> object, showing the population for each stratum of Sex and age group across the United states. This will also the standardized measure we will use when comparing the states to one another.</p>
+<div class="cell">
+<div class="cell-output-display">
+<div data-pagedtable="false">
+  <script data-pagedtable-source="" type="application/json">
+{"columns":[{"label":["Sex"],"name":[1],"type":["chr"],"align":["left"]},{"label":["age_group"],"name":[2],"type":["chr"],"align":["left"]},{"label":["population"],"name":[3],"type":["dbl"],"align":["right"]}],"data":[{"1":"Female","2":"0-.99 years","3":"1809703"},{"1":"Female","2":"01-04 years","3":"7620035"},{"1":"Female","2":"05-14 years","3":"20518881"},{"1":"Female","2":"15-24 years","3":"20981911"},{"1":"Female","2":"25-34 years","3":"22449525"},{"1":"Female","2":"35-44 years","3":"21276445"},{"1":"Female","2":"45-54 years","3":"20563411"},{"1":"Female","2":"55-64 years","3":"21973114"},{"1":"Female","2":"65-74 years","3":"17208126"},{"1":"Female","2":"75-84 years","3":"8832725"},{"1":"Female","2":"85 years and over","3":"171003046"},{"1":"Male","2":"0-.99 years","3":"1893263"},{"1":"Male","2":"01-04 years","3":"7968874"},{"1":"Male","2":"05-14 years","3":"21520591"},{"1":"Male","2":"15-24 years","3":"21603341"},{"1":"Male","2":"25-34 years","3":"22791780"},{"1":"Male","2":"35-44 years","3":"21420401"},{"1":"Male","2":"45-54 years","3":"20492996"},{"1":"Male","2":"55-64 years","3":"21075426"},{"1":"Male","2":"65-74 years","3":"15361155"},{"1":"Male","2":"75-84 years","3":"6989539"},{"1":"Male","2":"85 years and over","3":"165470228"}],"options":{"columns":{"min":{},"max":[10]},"rows":{"min":[10],"max":[10]},"pages":{}}}
+  </script>
+</div>
+</div>
+</div>
+</div>
+<div id="tabset-1-3" class="tab-pane" role="tabpanel" aria-labelledby="tabset-1-3-tab">
+<p>he <code>redblue</code> object shows the political affiliation of each state around the year 2020. Notice that political affiliation may change dramatically over the years.</p>
+<div class="cell">
+<div class="cell-output-display">
+<div data-pagedtable="false">
+  <script data-pagedtable-source="" type="application/json">
+{"columns":[{"label":["State"],"name":[1],"type":["chr"],"align":["left"]},{"label":["redblue"],"name":[2],"type":["chr"],"align":["left"]}],"data":[{"1":"Alabama","2":"Republican"},{"1":"Alaska","2":"Republican"},{"1":"Arizona","2":"Swing State"},{"1":"Arkansas","2":"Republican"},{"1":"California","2":"Democrat"},{"1":"Colorado","2":"Democrat"},{"1":"Connecticut","2":"Democrat"},{"1":"Delaware","2":"Democrat"},{"1":"District of Columbia","2":"Democrat"},{"1":"Florida","2":"Swing State"},{"1":"Georgia","2":"Swing State"},{"1":"Hawaii","2":"Democrat"},{"1":"Idaho","2":"Republican"},{"1":"Illinois","2":"Democrat"},{"1":"Indiana","2":"Republican"},{"1":"Iowa","2":"Republican"},{"1":"Kansas","2":"Republican"},{"1":"Kentucky","2":"Republican"},{"1":"Louisiana","2":"Republican"},{"1":"Maine","2":"Democrat"},{"1":"Maryland","2":"Democrat"},{"1":"Massachusetts","2":"Democrat"},{"1":"Michigan","2":"Swing State"},{"1":"Minnesota","2":"Swing State"},{"1":"Mississippi","2":"Republican"},{"1":"Missouri","2":"Republican"},{"1":"Montana","2":"Republican"},{"1":"Nebraska","2":"Republican"},{"1":"Nevada","2":"Swing State"},{"1":"New Hampshire","2":"Democrat"},{"1":"New Jersey","2":"Democrat"},{"1":"New Mexico","2":"Democrat"},{"1":"New York","2":"Democrat"},{"1":"North Carolina","2":"Swing State"},{"1":"North Dakota","2":"Republican"},{"1":"Ohio","2":"Swing State"},{"1":"Oklahoma","2":"Republican"},{"1":"Oregon","2":"Democrat"},{"1":"Pennsylvania","2":"Swing State"},{"1":"Rhode Island","2":"Democrat"},{"1":"South Carolina","2":"Republican"},{"1":"South Dakota","2":"Republican"},{"1":"Tennessee","2":"Republican"},{"1":"Texas","2":"Republican"},{"1":"Utah","2":"Republican"},{"1":"Vermont","2":"Democrat"},{"1":"Virginia","2":"Democrat"},{"1":"Washington","2":"Democrat"},{"1":"West Virginia","2":"Republican"},{"1":"Wisconsin","2":"Swing State"},{"1":"Wyoming","2":"Republican"}],"options":{"columns":{"min":{},"max":[10]},"rows":{"min":[10],"max":[10]},"pages":{}}}
+  </script>
+</div>
+</div>
+</div>
+</div>
+<div id="tabset-1-4" class="tab-pane" role="tabpanel" aria-labelledby="tabset-1-4-tab">
+<p>he <code>states_regions</code> object shows maps states names to the regions and divisions. This will be useful for facetting.</p>
+<div class="cell">
+<div class="cell-output-display">
+<div data-pagedtable="false">
+  <script data-pagedtable-source="" type="application/json">
+{"columns":[{"label":["Abb"],"name":[1],"type":["chr"],"align":["left"]},{"label":["State"],"name":[2],"type":["chr"],"align":["left"]},{"label":["Region"],"name":[3],"type":["chr"],"align":["left"]},{"label":["Division"],"name":[4],"type":["chr"],"align":["left"]}],"data":[{"1":"AL","2":"Alabama","3":"South","4":"East South Central"},{"1":"AK","2":"Alaska","3":"West","4":"Pacific"},{"1":"AZ","2":"Arizona","3":"West","4":"Mountain"},{"1":"AR","2":"Arkansas","3":"South","4":"West South Central"},{"1":"CA","2":"California","3":"West","4":"Pacific"},{"1":"CO","2":"Colorado","3":"West","4":"Mountain"},{"1":"CT","2":"Connecticut","3":"Northeast","4":"New England"},{"1":"DE","2":"Delaware","3":"South","4":"South Atlantic"},{"1":"FL","2":"Florida","3":"South","4":"South Atlantic"},{"1":"GA","2":"Georgia","3":"South","4":"South Atlantic"},{"1":"HI","2":"Hawaii","3":"West","4":"Pacific"},{"1":"ID","2":"Idaho","3":"West","4":"Mountain"},{"1":"IL","2":"Illinois","3":"North Central","4":"East North Central"},{"1":"IN","2":"Indiana","3":"North Central","4":"East North Central"},{"1":"IA","2":"Iowa","3":"North Central","4":"West North Central"},{"1":"KS","2":"Kansas","3":"North Central","4":"West North Central"},{"1":"KY","2":"Kentucky","3":"South","4":"East South Central"},{"1":"LA","2":"Louisiana","3":"South","4":"West South Central"},{"1":"ME","2":"Maine","3":"Northeast","4":"New England"},{"1":"MD","2":"Maryland","3":"South","4":"South Atlantic"},{"1":"MA","2":"Massachusetts","3":"Northeast","4":"New England"},{"1":"MI","2":"Michigan","3":"North Central","4":"East North Central"},{"1":"MN","2":"Minnesota","3":"North Central","4":"West North Central"},{"1":"MS","2":"Mississippi","3":"South","4":"East South Central"},{"1":"MO","2":"Missouri","3":"North Central","4":"West North Central"},{"1":"MT","2":"Montana","3":"West","4":"Mountain"},{"1":"NE","2":"Nebraska","3":"North Central","4":"West North Central"},{"1":"NV","2":"Nevada","3":"West","4":"Mountain"},{"1":"NH","2":"New Hampshire","3":"Northeast","4":"New England"},{"1":"NJ","2":"New Jersey","3":"Northeast","4":"Middle Atlantic"},{"1":"NM","2":"New Mexico","3":"West","4":"Mountain"},{"1":"NY","2":"New York","3":"Northeast","4":"Middle Atlantic"},{"1":"NC","2":"North Carolina","3":"South","4":"South Atlantic"},{"1":"ND","2":"North Dakota","3":"North Central","4":"West North Central"},{"1":"OH","2":"Ohio","3":"North Central","4":"East North Central"},{"1":"OK","2":"Oklahoma","3":"South","4":"West South Central"},{"1":"OR","2":"Oregon","3":"West","4":"Pacific"},{"1":"PA","2":"Pennsylvania","3":"Northeast","4":"Middle Atlantic"},{"1":"RI","2":"Rhode Island","3":"Northeast","4":"New England"},{"1":"SC","2":"South Carolina","3":"South","4":"South Atlantic"},{"1":"SD","2":"South Dakota","3":"North Central","4":"West North Central"},{"1":"TN","2":"Tennessee","3":"South","4":"East South Central"},{"1":"TX","2":"Texas","3":"South","4":"West South Central"},{"1":"UT","2":"Utah","3":"West","4":"Mountain"},{"1":"VT","2":"Vermont","3":"Northeast","4":"New England"},{"1":"VA","2":"Virginia","3":"South","4":"South Atlantic"},{"1":"WA","2":"Washington","3":"West","4":"Pacific"},{"1":"WV","2":"West Virginia","3":"South","4":"South Atlantic"},{"1":"WI","2":"Wisconsin","3":"North Central","4":"East North Central"},{"1":"WY","2":"Wyoming","3":"West","4":"Mountain"},{"1":"DC","2":"District of Columbia","3":"Northeast","4":"Middle Atlantic"}],"options":{"columns":{"min":{},"max":[10]},"rows":{"min":[10],"max":[10]},"pages":{}}}
+  </script>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</section>
+<section id="calculating-the-standardized-mortality-rate" class="level2">
+<h2 class="anchored" data-anchor-id="calculating-the-standardized-mortality-rate">Calculating the standardized mortality rate</h2>
+<p>Finally, we can calculate the standardized mortality rate for each state. For each state, we calculate the expected mortality, if this stratum was adjusted to its relative size in the country, i.e., if the mortality rate for each stratum in the USA was identical to the mortality rate for the exact same stratum at the state level.</p>
+<div class="cell">
+<details class="code-fold">
+<summary>Show the code</summary>
+<div class="sourceCode cell-code" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>sdr <span class="ot">&lt;-</span> study_pop <span class="sc">|&gt;</span> </span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(State) <span class="sc">|&gt;</span> </span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">phe_dsr</span>(</span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>    deaths,             <span class="co"># deaths at the state level</span></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>    pop_state,          <span class="co"># pop size at the state level</span></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>    <span class="at">stdpop =</span>            <span class="co"># pop size at the USA level</span></span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>      stndrd_pop<span class="sc">$</span>population </span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a>    ) <span class="sc">|&gt;</span> </span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(<span class="dv">1</span><span class="sc">:</span><span class="dv">6</span>) <span class="sc">|&gt;</span> </span>
+<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">rename</span>(</span>
+<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a>    <span class="at">deaths =</span> total_count, </span>
+<span id="cb2-12"><a href="#cb2-12" aria-hidden="true" tabindex="-1"></a>    <span class="at">dsr_mort =</span> value</span>
+<span id="cb2-13"><a href="#cb2-13" aria-hidden="true" tabindex="-1"></a>    ) <span class="sc">|&gt;</span> </span>
+<span id="cb2-14"><a href="#cb2-14" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ungroup</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+</div>
+<div class="cell">
+<div class="cell-output-display">
+<div data-pagedtable="false">
+  <script data-pagedtable-source="" type="application/json">
+{"columns":[{"label":["State"],"name":[1],"type":["chr"],"align":["left"]},{"label":["deaths"],"name":[2],"type":["dbl"],"align":["right"]},{"label":["total_pop"],"name":[3],"type":["dbl"],"align":["right"]},{"label":["dsr_mort"],"name":[4],"type":["dbl"],"align":["right"]},{"label":["lowercl"],"name":[5],"type":["dbl"],"align":["right"]},{"label":["uppercl"],"name":[6],"type":["dbl"],"align":["right"]}],"data":[{"1":"Alabama","2":"6709","3":"10040112","4":"64.76131","5":"63.21986","6":"66.33083"},{"1":"Alaska","2":"248","3":"1423242","4":"19.95071","5":"17.50788","6":"22.63494"},{"1":"Arizona","2":"9314","3":"14332594","4":"61.61613","5":"60.36542","6":"62.88615"},{"1":"Arkansas","2":"4030","3":"6020822","4":"65.31002","5":"63.30748","6":"67.35977"},{"1":"California","2":"33567","3":"78715026","4":"45.18014","5":"44.69730","6":"45.66689"},{"1":"Colorado","2":"5067","3":"11495746","4":"47.03056","5":"45.74064","6":"48.34755"},{"1":"Connecticut","2":"6319","3":"7145490","4":"85.15612","5":"83.06773","6":"87.28370"},{"1":"Delaware","2":"1104","3":"1976306","4":"51.13076","5":"48.14669","6":"54.25078"},{"1":"District of Columbia","2":"997","3":"1335174","4":"92.07367","5":"86.38232","6":"98.03823"},{"1":"Florida","2":"21822","3":"43061062","4":"44.38818","5":"43.79568","6":"44.98664"},{"1":"Georgia","2":"10447","3":"21340094","4":"52.81862","5":"51.80811","6":"53.84385"},{"1":"Hawaii","2":"357","3":"2817838","4":"11.74005","5":"10.54989","6":"13.02739"},{"1":"Idaho","2":"1560","3":"3691302","4":"42.31602","5":"40.23920","6":"44.47212"},{"1":"Illinois","2":"16717","3":"25541840","4":"66.43901","5":"65.43535","6":"67.45422"},{"1":"Indiana","2":"9802","3":"13576078","4":"73.49776","5":"72.04956","6":"74.96774"},{"1":"Iowa","2":"4781","3":"6381226","4":"73.61471","5":"71.54162","6":"75.73260"},{"1":"Kansas","2":"3508","3":"5833122","4":"61.27258","5":"59.26093","6":"63.33510"},{"1":"Kentucky","2":"4639","3":"8983744","4":"50.96998","5":"49.51338","6":"52.45854"},{"1":"Louisiana","2":"7061","3":"9272612","4":"78.02044","5":"76.21031","6":"79.86270"},{"1":"Maine","2":"503","3":"2727328","4":"16.24144","5":"14.84237","6":"17.73609"},{"1":"Maryland","2":"6725","3":"12283792","4":"55.71526","5":"54.39033","6":"57.06429"},{"1":"Massachusetts","2":"10231","3":"13987668","4":"72.33343","5":"70.93816","6":"73.74923"},{"1":"Michigan","2":"12350","3":"20136944","4":"58.90518","5":"57.87003","6":"59.95418"},{"1":"Minnesota","2":"5847","3":"11419766","4":"51.65658","5":"50.34044","6":"52.99842"},{"1":"Mississippi","2":"5158","3":"5890500","4":"87.60067","5":"85.22528","6":"90.02547"},{"1":"Missouri","2":"8064","3":"12275476","4":"64.17092","5":"62.77746","6":"65.58751"},{"1":"Montana","2":"1270","3":"2167428","4":"53.86998","5":"50.93083","6":"56.93376"},{"1":"Nebraska","2":"2261","3":"3913880","4":"59.31927","5":"56.89801","6":"61.81703"},{"1":"Nevada","2":"3525","3":"6207900","4":"55.81917","5":"53.98948","6":"57.69501"},{"1":"New Hampshire","2":"885","3":"2756382","4":"30.22078","5":"28.25706","6":"32.28471"},{"1":"New Jersey","2":"18169","3":"18529186","4":"97.71757","5":"96.30089","6":"99.14986"},{"1":"New Mexico","2":"2883","3":"4211130","4":"65.23784","5":"62.87052","6":"67.67126"},{"1":"New York","2":"16201","3":"40169152","4":"40.02767","5":"39.41345","6":"40.64906"},{"1":"North Carolina","2":"8796","3":"20697074","4":"42.00714","5":"41.13360","6":"42.89456"},{"1":"North Dakota","2":"1522","3":"1543900","4":"102.02597","5":"96.95610","6":"107.29185"},{"1":"Ohio","2":"15113","3":"23582418","4":"62.38732","5":"61.39618","6":"63.39045"},{"1":"Oklahoma","2":"5248","3":"7891240","4":"67.96198","5":"66.13512","6":"69.82651"},{"1":"Oregon","2":"1616","3":"8487162","4":"18.28298","5":"17.40081","6":"19.19822"},{"1":"Pennsylvania","2":"18416","3":"25985370","4":"66.95785","5":"65.99291","6":"67.93336"},{"1":"Rhode Island","2":"1935","3":"2186776","4":"85.97172","5":"82.18162","6":"89.89145"},{"1":"South Carolina","2":"5704","3":"10188034","4":"52.47841","5":"51.12267","6":"53.86095"},{"1":"South Dakota","2":"1735","3":"1768682","4":"97.94198","5":"93.37877","6":"102.67020"},{"1":"Tennessee","2":"7920","3":"13811462","4":"56.79211","5":"55.54805","6":"58.05701"},{"1":"Texas","2":"33520","3":"58233866","4":"66.60552","5":"65.89024","6":"67.32659"},{"1":"Utah","2":"1650","3":"6558484","4":"31.82636","5":"30.29012","6":"33.41960"},{"1":"Vermont","2":"174","3":"1285502","4":"12.23778","5":"10.47780","6":"14.20754"},{"1":"Virginia","2":"6167","3":"17072176","4":"36.38833","5":"35.48564","6":"37.30818"},{"1":"Washington","2":"3708","3":"15349872","4":"24.73283","5":"23.94244","6":"25.54264"},{"1":"West Virginia","2":"1591","3":"3582792","4":"39.34788","5":"37.42599","6":"41.34240"},{"1":"Wisconsin","2":"6289","3":"11790200","4":"51.69755","5":"50.42652","6":"52.99249"},{"1":"Wyoming","2":"461","3":"1149544","4":"39.21186","5":"35.70292","6":"42.97158"}],"options":{"columns":{"min":{},"max":[10]},"rows":{"min":[10],"max":[10]},"pages":{}}}
+  </script>
+</div>
+</div>
+</div>
+<p>The <code>deaths</code> and <code>total_pop</code> columns shows the total number of deaths and the total population for each state. The <code>dsr_mort</code> shows the standardized death rate (out of 100,000) if the strata were to be appropriately standardized. So for example, for the state of Alabama we would expect a death rate of <span class="math display">\[
+100,000 \cdot \frac{6709}{10040112} = 66.82
+\]</span> Or 66.82 deaths per 100k, but the standardized rate is 64.76 with a 95% confidence interval of 63.2 - 66.3 per 100k population.</p>
+</section>
+<section id="dsr-by-political-affiliation" class="level2">
+<h2 class="anchored" data-anchor-id="dsr-by-political-affiliation">DSR by political affiliation</h2>
+<p>We can now plot our results. First, let’s see whether the political affiliation of the state appears to be associated with the direct standardized mortality rate?</p>
+<div class="cell">
+<details class="code-fold">
+<summary>Show the code</summary>
+<div class="sourceCode cell-code" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="co"># The first plot will show all states in one chart</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>p1 <span class="ot">&lt;-</span> sdr <span class="sc">%&gt;%</span> </span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">left_join</span>(redblue, <span class="at">by =</span> <span class="st">"State"</span>) <span class="sc">|&gt;</span> </span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">left_join</span>(states_regions, <span class="at">by =</span> <span class="st">"State"</span>) <span class="sc">%&gt;%</span>  </span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">State =</span> <span class="fu">fct_reorder</span>(State, dsr_mort)) <span class="sc">|&gt;</span> </span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(</span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>    <span class="fu">aes</span>(</span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>      State, </span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a>      dsr_mort, </span>
+<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a>      <span class="at">ymin =</span> lowercl, </span>
+<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a>      <span class="at">ymax =</span> uppercl, </span>
+<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a>      <span class="at">color =</span> redblue</span>
+<span id="cb3-13"><a href="#cb3-13" aria-hidden="true" tabindex="-1"></a>    )</span>
+<span id="cb3-14"><a href="#cb3-14" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">+</span> </span>
+<span id="cb3-15"><a href="#cb3-15" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_errorbar</span>(<span class="at">linewidth =</span> <span class="dv">1</span>) <span class="sc">+</span> </span>
+<span id="cb3-16"><a href="#cb3-16" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_y_continuous</span>(<span class="at">breaks =</span> <span class="fu">seq</span>(<span class="dv">10</span>, <span class="dv">100</span>, <span class="dv">10</span>)) <span class="sc">+</span></span>
+<span id="cb3-17"><a href="#cb3-17" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_x_discrete</span>(</span>
+<span id="cb3-18"><a href="#cb3-18" aria-hidden="true" tabindex="-1"></a>    <span class="at">guide =</span> <span class="fu">guide_axis</span>(<span class="at">n.dodge =</span> <span class="dv">2</span>)</span>
+<span id="cb3-19"><a href="#cb3-19" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">+</span></span>
+<span id="cb3-20"><a href="#cb3-20" aria-hidden="true" tabindex="-1"></a>  <span class="fu">coord_flip</span>() <span class="sc">+</span> </span>
+<span id="cb3-21"><a href="#cb3-21" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(</span>
+<span id="cb3-22"><a href="#cb3-22" aria-hidden="true" tabindex="-1"></a>    <span class="at">x =</span> <span class="cn">NULL</span>, </span>
+<span id="cb3-23"><a href="#cb3-23" aria-hidden="true" tabindex="-1"></a>    <span class="at">y =</span> <span class="st">"DSR"</span>, </span>
+<span id="cb3-24"><a href="#cb3-24" aria-hidden="true" tabindex="-1"></a>    <span class="at">title =</span> <span class="st">"Direct standardized mortality rate"</span>, </span>
+<span id="cb3-25"><a href="#cb3-25" aria-hidden="true" tabindex="-1"></a>    <span class="at">subtitle =</span> <span class="st">"COVID-19 mortality per 100k"</span>, </span>
+<span id="cb3-26"><a href="#cb3-26" aria-hidden="true" tabindex="-1"></a>    <span class="at">color =</span> <span class="cn">NULL</span></span>
+<span id="cb3-27"><a href="#cb3-27" aria-hidden="true" tabindex="-1"></a>    ) <span class="sc">+</span> </span>
+<span id="cb3-28"><a href="#cb3-28" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_color_manual</span>(</span>
+<span id="cb3-29"><a href="#cb3-29" aria-hidden="true" tabindex="-1"></a>    <span class="at">values =</span> <span class="fu">c</span>(</span>
+<span id="cb3-30"><a href="#cb3-30" aria-hidden="true" tabindex="-1"></a>      <span class="st">"Democrat"</span> <span class="ot">=</span> <span class="st">"blue"</span>, </span>
+<span id="cb3-31"><a href="#cb3-31" aria-hidden="true" tabindex="-1"></a>      <span class="st">"Republican"</span> <span class="ot">=</span> <span class="st">"red"</span>, </span>
+<span id="cb3-32"><a href="#cb3-32" aria-hidden="true" tabindex="-1"></a>      <span class="st">"Swing State"</span> <span class="ot">=</span> <span class="st">"grey"</span></span>
+<span id="cb3-33"><a href="#cb3-33" aria-hidden="true" tabindex="-1"></a>    )</span>
+<span id="cb3-34"><a href="#cb3-34" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">+</span> </span>
+<span id="cb3-35"><a href="#cb3-35" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme</span>(</span>
+<span id="cb3-36"><a href="#cb3-36" aria-hidden="true" tabindex="-1"></a>    <span class="at">legend.position =</span> <span class="st">"bottom"</span></span>
+<span id="cb3-37"><a href="#cb3-37" aria-hidden="true" tabindex="-1"></a>  ) </span>
+<span id="cb3-38"><a href="#cb3-38" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-39"><a href="#cb3-39" aria-hidden="true" tabindex="-1"></a><span class="co"># The second plot will show facet the result by region</span></span>
+<span id="cb3-40"><a href="#cb3-40" aria-hidden="true" tabindex="-1"></a>p2 <span class="ot">&lt;-</span> sdr <span class="sc">%&gt;%</span> </span>
+<span id="cb3-41"><a href="#cb3-41" aria-hidden="true" tabindex="-1"></a>  <span class="fu">left_join</span>(redblue, <span class="at">by =</span> <span class="st">"State"</span>) <span class="sc">|&gt;</span> </span>
+<span id="cb3-42"><a href="#cb3-42" aria-hidden="true" tabindex="-1"></a>  <span class="fu">left_join</span>(states_regions, <span class="at">by =</span> <span class="st">"State"</span>) <span class="sc">%&gt;%</span>  </span>
+<span id="cb3-43"><a href="#cb3-43" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">State =</span> <span class="fu">fct_reorder</span>(State, dsr_mort)) <span class="sc">|&gt;</span> </span>
+<span id="cb3-44"><a href="#cb3-44" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(</span>
+<span id="cb3-45"><a href="#cb3-45" aria-hidden="true" tabindex="-1"></a>    <span class="fu">aes</span>(</span>
+<span id="cb3-46"><a href="#cb3-46" aria-hidden="true" tabindex="-1"></a>      State, </span>
+<span id="cb3-47"><a href="#cb3-47" aria-hidden="true" tabindex="-1"></a>      dsr_mort, </span>
+<span id="cb3-48"><a href="#cb3-48" aria-hidden="true" tabindex="-1"></a>      <span class="at">ymin =</span> lowercl, </span>
+<span id="cb3-49"><a href="#cb3-49" aria-hidden="true" tabindex="-1"></a>      <span class="at">ymax =</span> uppercl, </span>
+<span id="cb3-50"><a href="#cb3-50" aria-hidden="true" tabindex="-1"></a>      <span class="at">color =</span> redblue</span>
+<span id="cb3-51"><a href="#cb3-51" aria-hidden="true" tabindex="-1"></a>    )</span>
+<span id="cb3-52"><a href="#cb3-52" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">+</span> </span>
+<span id="cb3-53"><a href="#cb3-53" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_errorbar</span>(<span class="at">linewidth =</span> <span class="dv">1</span>) <span class="sc">+</span> </span>
+<span id="cb3-54"><a href="#cb3-54" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_y_continuous</span>(<span class="at">breaks =</span> <span class="fu">seq</span>(<span class="dv">10</span>, <span class="dv">100</span>, <span class="dv">10</span>)) <span class="sc">+</span></span>
+<span id="cb3-55"><a href="#cb3-55" aria-hidden="true" tabindex="-1"></a>  <span class="fu">facet_wrap</span>(<span class="sc">~</span>Region, <span class="at">scales =</span> <span class="st">"free"</span> ) <span class="sc">+</span></span>
+<span id="cb3-56"><a href="#cb3-56" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_x_discrete</span>(</span>
+<span id="cb3-57"><a href="#cb3-57" aria-hidden="true" tabindex="-1"></a>    <span class="co"># guide = guide_axis(n.dodge = 2)</span></span>
+<span id="cb3-58"><a href="#cb3-58" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">+</span></span>
+<span id="cb3-59"><a href="#cb3-59" aria-hidden="true" tabindex="-1"></a>  <span class="fu">coord_flip</span>() <span class="sc">+</span> </span>
+<span id="cb3-60"><a href="#cb3-60" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(</span>
+<span id="cb3-61"><a href="#cb3-61" aria-hidden="true" tabindex="-1"></a>    <span class="at">x =</span> <span class="cn">NULL</span>, </span>
+<span id="cb3-62"><a href="#cb3-62" aria-hidden="true" tabindex="-1"></a>    <span class="at">y =</span> <span class="st">"DSR"</span>, </span>
+<span id="cb3-63"><a href="#cb3-63" aria-hidden="true" tabindex="-1"></a>    <span class="at">title =</span> <span class="st">"Direct standardized mortality rate"</span>, </span>
+<span id="cb3-64"><a href="#cb3-64" aria-hidden="true" tabindex="-1"></a>    <span class="at">subtitle =</span> <span class="st">"COVID-19 mortality per 100k"</span>, </span>
+<span id="cb3-65"><a href="#cb3-65" aria-hidden="true" tabindex="-1"></a>    <span class="at">color =</span> <span class="cn">NULL</span></span>
+<span id="cb3-66"><a href="#cb3-66" aria-hidden="true" tabindex="-1"></a>    ) <span class="sc">+</span> </span>
+<span id="cb3-67"><a href="#cb3-67" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_color_manual</span>(</span>
+<span id="cb3-68"><a href="#cb3-68" aria-hidden="true" tabindex="-1"></a>    <span class="at">values =</span> <span class="fu">c</span>(</span>
+<span id="cb3-69"><a href="#cb3-69" aria-hidden="true" tabindex="-1"></a>      <span class="st">"Democrat"</span> <span class="ot">=</span> <span class="st">"blue"</span>, </span>
+<span id="cb3-70"><a href="#cb3-70" aria-hidden="true" tabindex="-1"></a>      <span class="st">"Republican"</span> <span class="ot">=</span> <span class="st">"red"</span>, </span>
+<span id="cb3-71"><a href="#cb3-71" aria-hidden="true" tabindex="-1"></a>      <span class="st">"Swing State"</span> <span class="ot">=</span> <span class="st">"grey"</span></span>
+<span id="cb3-72"><a href="#cb3-72" aria-hidden="true" tabindex="-1"></a>    )</span>
+<span id="cb3-73"><a href="#cb3-73" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">+</span> </span>
+<span id="cb3-74"><a href="#cb3-74" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme</span>(</span>
+<span id="cb3-75"><a href="#cb3-75" aria-hidden="true" tabindex="-1"></a>    <span class="at">legend.position =</span> <span class="st">"bottom"</span></span>
+<span id="cb3-76"><a href="#cb3-76" aria-hidden="true" tabindex="-1"></a>  ) </span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+</div>
+<div class="tabset-margin-container"></div><div class="panel-tabset">
+<ul class="nav nav-tabs" role="tablist"><li class="nav-item" role="presentation"><a class="nav-link active" id="tabset-2-1-tab" data-bs-toggle="tab" data-bs-target="#tabset-2-1" role="tab" aria-controls="tabset-2-1" aria-selected="true" href="">Single chart</a></li><li class="nav-item" role="presentation"><a class="nav-link" id="tabset-2-2-tab" data-bs-toggle="tab" data-bs-target="#tabset-2-2" role="tab" aria-controls="tabset-2-2" aria-selected="false" href="">Facetted by region</a></li></ul>
+<div class="tab-content">
+<div id="tabset-2-1" class="tab-pane active" role="tabpanel" aria-labelledby="tabset-2-1-tab">
+<div class="cell" data-layout-align="center">
+<div class="cell-output-display">
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="COVID-DSR_files/figure-html/redblue-p1-1.png" class="img-fluid quarto-figure quarto-figure-center figure-img" width="960"></p>
+</figure>
+</div>
+</div>
+</div>
+</div>
+<div id="tabset-2-2" class="tab-pane" role="tabpanel" aria-labelledby="tabset-2-2-tab">
+<div class="cell" data-layout-align="center">
+<div class="cell-output-display">
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="COVID-DSR_files/figure-html/redblue-p2-1.png" class="img-fluid quarto-figure quarto-figure-center figure-img" width="960"></p>
+</figure>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<p>There is an obvious and significant difference in the standardized mortality rate, in fact, a difference of up to two orders of magnitude between states at the lower end of the mortality rate (like Hawaii and Vermont) and those at the higher rate (such as South- and North-Dakota).</p>
+<p>There is no obvious association between mortality and political affiliation (though we might want to run a regression to test that out).</p>
+</section>
+
+</main>
+<!-- /main column -->
+<script id="quarto-html-after-body" type="application/javascript">
+window.document.addEventListener("DOMContentLoaded", function (event) {
+  const toggleBodyColorMode = (bsSheetEl) => {
+    const mode = bsSheetEl.getAttribute("data-mode");
+    const bodyEl = window.document.querySelector("body");
+    if (mode === "dark") {
+      bodyEl.classList.add("quarto-dark");
+      bodyEl.classList.remove("quarto-light");
+    } else {
+      bodyEl.classList.add("quarto-light");
+      bodyEl.classList.remove("quarto-dark");
+    }
+  }
+  const toggleBodyColorPrimary = () => {
+    const bsSheetEl = window.document.querySelector("link#quarto-bootstrap");
+    if (bsSheetEl) {
+      toggleBodyColorMode(bsSheetEl);
+    }
+  }
+  toggleBodyColorPrimary();  
+  const icon = "";
+  const anchorJS = new window.AnchorJS();
+  anchorJS.options = {
+    placement: 'right',
+    icon: icon
+  };
+  anchorJS.add('.anchored');
+  const isCodeAnnotation = (el) => {
+    for (const clz of el.classList) {
+      if (clz.startsWith('code-annotation-')) {                     
+        return true;
+      }
+    }
+    return false;
+  }
+  const onCopySuccess = function(e) {
+    // button target
+    const button = e.trigger;
+    // don't keep focus
+    button.blur();
+    // flash "checked"
+    button.classList.add('code-copy-button-checked');
+    var currentTitle = button.getAttribute("title");
+    button.setAttribute("title", "Copied!");
+    let tooltip;
+    if (window.bootstrap) {
+      button.setAttribute("data-bs-toggle", "tooltip");
+      button.setAttribute("data-bs-placement", "left");
+      button.setAttribute("data-bs-title", "Copied!");
+      tooltip = new bootstrap.Tooltip(button, 
+        { trigger: "manual", 
+          customClass: "code-copy-button-tooltip",
+          offset: [0, -8]});
+      tooltip.show();    
+    }
+    setTimeout(function() {
+      if (tooltip) {
+        tooltip.hide();
+        button.removeAttribute("data-bs-title");
+        button.removeAttribute("data-bs-toggle");
+        button.removeAttribute("data-bs-placement");
+      }
+      button.setAttribute("title", currentTitle);
+      button.classList.remove('code-copy-button-checked');
+    }, 1000);
+    // clear code selection
+    e.clearSelection();
+  }
+  const getTextToCopy = function(trigger) {
+      const codeEl = trigger.previousElementSibling.cloneNode(true);
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+  }
+  const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+    text: getTextToCopy
+  });
+  clipboard.on('success', onCopySuccess);
+  if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+    const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+      text: getTextToCopy,
+      container: window.document.getElementById('quarto-embedded-source-code-modal')
+    });
+    clipboardModal.on('success', onCopySuccess);
+  }
+    var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+    var mailtoRegex = new RegExp(/^mailto:/);
+      var filterRegex = new RegExp('/' + window.location.host + '/');
+    var isInternal = (href) => {
+        return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+    }
+    // Inspect non-navigation links and adorn them if external
+ 	var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+    for (var i=0; i<links.length; i++) {
+      const link = links[i];
+      if (!isInternal(link.href)) {
+        // undo the damage that might have been done by quarto-nav.js in the case of
+        // links that we want to consider external
+        if (link.dataset.originalHref !== undefined) {
+          link.href = link.dataset.originalHref;
+        }
+      }
+    }
+  function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+    const config = {
+      allowHTML: true,
+      maxWidth: 500,
+      delay: 100,
+      arrow: false,
+      appendTo: function(el) {
+          return el.parentElement;
+      },
+      interactive: true,
+      interactiveBorder: 10,
+      theme: 'quarto',
+      placement: 'bottom-start',
+    };
+    if (contentFn) {
+      config.content = contentFn;
+    }
+    if (onTriggerFn) {
+      config.onTrigger = onTriggerFn;
+    }
+    if (onUntriggerFn) {
+      config.onUntrigger = onUntriggerFn;
+    }
+    window.tippy(el, config); 
+  }
+  const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+  for (var i=0; i<noterefs.length; i++) {
+    const ref = noterefs[i];
+    tippyHover(ref, function() {
+      // use id or data attribute instead here
+      let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+      try { href = new URL(href).hash; } catch {}
+      const id = href.replace(/^#\/?/, "");
+      const note = window.document.getElementById(id);
+      if (note) {
+        return note.innerHTML;
+      } else {
+        return "";
+      }
+    });
+  }
+  const xrefs = window.document.querySelectorAll('a.quarto-xref');
+  const processXRef = (id, note) => {
+    // Strip column container classes
+    const stripColumnClz = (el) => {
+      el.classList.remove("page-full", "page-columns");
+      if (el.children) {
+        for (const child of el.children) {
+          stripColumnClz(child);
+        }
+      }
+    }
+    stripColumnClz(note)
+    if (id === null || id.startsWith('sec-')) {
+      // Special case sections, only their first couple elements
+      const container = document.createElement("div");
+      if (note.children && note.children.length > 2) {
+        container.appendChild(note.children[0].cloneNode(true));
+        for (let i = 1; i < note.children.length; i++) {
+          const child = note.children[i];
+          if (child.tagName === "P" && child.innerText === "") {
+            continue;
+          } else {
+            container.appendChild(child.cloneNode(true));
+            break;
+          }
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(container);
+        }
+        return container.innerHTML
+      } else {
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        return note.innerHTML;
+      }
+    } else {
+      // Remove any anchor links if they are present
+      const anchorLink = note.querySelector('a.anchorjs-link');
+      if (anchorLink) {
+        anchorLink.remove();
+      }
+      if (window.Quarto?.typesetMath) {
+        window.Quarto.typesetMath(note);
+      }
+      if (note.classList.contains("callout")) {
+        return note.outerHTML;
+      } else {
+        return note.innerHTML;
+      }
+    }
+  }
+  for (var i=0; i<xrefs.length; i++) {
+    const xref = xrefs[i];
+    tippyHover(xref, undefined, function(instance) {
+      instance.disable();
+      let url = xref.getAttribute('href');
+      let hash = undefined; 
+      if (url.startsWith('#')) {
+        hash = url;
+      } else {
+        try { hash = new URL(url).hash; } catch {}
+      }
+      if (hash) {
+        const id = hash.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note !== null) {
+          try {
+            const html = processXRef(id, note.cloneNode(true));
+            instance.setContent(html);
+          } finally {
+            instance.enable();
+            instance.show();
+          }
+        } else {
+          // See if we can fetch this
+          fetch(url.split('#')[0])
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.getElementById(id);
+            if (note !== null) {
+              const html = processXRef(id, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      } else {
+        // See if we can fetch a full url (with no hash to target)
+        // This is a special case and we should probably do some content thinning / targeting
+        fetch(url)
+        .then(res => res.text())
+        .then(html => {
+          const parser = new DOMParser();
+          const htmlDoc = parser.parseFromString(html, "text/html");
+          const note = htmlDoc.querySelector('main.content');
+          if (note !== null) {
+            // This should only happen for chapter cross references
+            // (since there is no id in the URL)
+            // remove the first header
+            if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+              note.children[0].remove();
+            }
+            const html = processXRef(null, note);
+            instance.setContent(html);
+          } 
+        }).finally(() => {
+          instance.enable();
+          instance.show();
+        });
+      }
+    }, function(instance) {
+    });
+  }
+      let selectedAnnoteEl;
+      const selectorForAnnotation = ( cell, annotation) => {
+        let cellAttr = 'data-code-cell="' + cell + '"';
+        let lineAttr = 'data-code-annotation="' +  annotation + '"';
+        const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+        return selector;
+      }
+      const selectCodeLines = (annoteEl) => {
+        const doc = window.document;
+        const targetCell = annoteEl.getAttribute("data-target-cell");
+        const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+        const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+        const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+        const lineIds = lines.map((line) => {
+          return targetCell + "-" + line;
+        })
+        let top = null;
+        let height = null;
+        let parent = null;
+        if (lineIds.length > 0) {
+            //compute the position of the single el (top and bottom and make a div)
+            const el = window.document.getElementById(lineIds[0]);
+            top = el.offsetTop;
+            height = el.offsetHeight;
+            parent = el.parentElement.parentElement;
+          if (lineIds.length > 1) {
+            const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+            const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+            height = bottom - top;
+          }
+          if (top !== null && height !== null && parent !== null) {
+            // cook up a div (if necessary) and position it 
+            let div = window.document.getElementById("code-annotation-line-highlight");
+            if (div === null) {
+              div = window.document.createElement("div");
+              div.setAttribute("id", "code-annotation-line-highlight");
+              div.style.position = 'absolute';
+              parent.appendChild(div);
+            }
+            div.style.top = top - 2 + "px";
+            div.style.height = height + 4 + "px";
+            div.style.left = 0;
+            let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+            if (gutterDiv === null) {
+              gutterDiv = window.document.createElement("div");
+              gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+              gutterDiv.style.position = 'absolute';
+              const codeCell = window.document.getElementById(targetCell);
+              const gutter = codeCell.querySelector('.code-annotation-gutter');
+              gutter.appendChild(gutterDiv);
+            }
+            gutterDiv.style.top = top - 2 + "px";
+            gutterDiv.style.height = height + 4 + "px";
+          }
+          selectedAnnoteEl = annoteEl;
+        }
+      };
+      const unselectCodeLines = () => {
+        const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+        elementsIds.forEach((elId) => {
+          const div = window.document.getElementById(elId);
+          if (div) {
+            div.remove();
+          }
+        });
+        selectedAnnoteEl = undefined;
+      };
+        // Handle positioning of the toggle
+    window.addEventListener(
+      "resize",
+      throttle(() => {
+        elRect = undefined;
+        if (selectedAnnoteEl) {
+          selectCodeLines(selectedAnnoteEl);
+        }
+      }, 10)
+    );
+    function throttle(fn, ms) {
+    let throttle = false;
+    let timer;
+      return (...args) => {
+        if(!throttle) { // first call gets through
+            fn.apply(this, args);
+            throttle = true;
+        } else { // all the others get throttled
+            if(timer) clearTimeout(timer); // cancel #2
+            timer = setTimeout(() => {
+              fn.apply(this, args);
+              timer = throttle = false;
+            }, ms);
+        }
+      };
+    }
+      // Attach click handler to the DT
+      const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+      for (const annoteDlNode of annoteDls) {
+        annoteDlNode.addEventListener('click', (event) => {
+          const clickedEl = event.target;
+          if (clickedEl !== selectedAnnoteEl) {
+            unselectCodeLines();
+            const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+            if (activeEl) {
+              activeEl.classList.remove('code-annotation-active');
+            }
+            selectCodeLines(clickedEl);
+            clickedEl.classList.add('code-annotation-active');
+          } else {
+            // Unselect the line
+            unselectCodeLines();
+            clickedEl.classList.remove('code-annotation-active');
+          }
+        });
+      }
+  const findCites = (el) => {
+    const parentEl = el.parentElement;
+    if (parentEl) {
+      const cites = parentEl.dataset.cites;
+      if (cites) {
+        return {
+          el,
+          cites: cites.split(' ')
+        };
+      } else {
+        return findCites(el.parentElement)
+      }
+    } else {
+      return undefined;
+    }
+  };
+  var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+  for (var i=0; i<bibliorefs.length; i++) {
+    const ref = bibliorefs[i];
+    const citeInfo = findCites(ref);
+    if (citeInfo) {
+      tippyHover(citeInfo.el, function() {
+        var popup = window.document.createElement('div');
+        citeInfo.cites.forEach(function(cite) {
+          var citeDiv = window.document.createElement('div');
+          citeDiv.classList.add('hanging-indent');
+          citeDiv.classList.add('csl-entry');
+          var biblioDiv = window.document.getElementById('ref-' + cite);
+          if (biblioDiv) {
+            citeDiv.innerHTML = biblioDiv.innerHTML;
+          }
+          popup.appendChild(citeDiv);
+        });
+        return popup.innerHTML;
+      });
+    }
+  }
+});
+</script>
+</div> <!-- /content -->
+
+
+
+
+</body></html>
