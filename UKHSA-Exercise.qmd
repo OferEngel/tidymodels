@@ -22,7 +22,7 @@ editor_options:
 #| echo: false
 
 rm(list = ls())
-source(here::here("bin", "lib.R"))
+source(here("bin", "lib.R"))
 
 # load data here
 df <- read_csv(
