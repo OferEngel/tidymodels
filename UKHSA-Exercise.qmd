@@ -19,13 +19,104 @@ editor_options:
 
 
 ```{r}
+#| label: setup0
+#| warning: false
+#| echo: false
+#| include: false
+
+library(tidyverse)
+library(janitor)
+library(broom)
+library(tidymodels)  # Includes the workflows package
+tidymodels_prefer()
+theme_set(theme_minimal())
+library(tidyverse)
+library(glue)
+library(themis)
+library(skimr) # use to skim(data)
+library(colino)
+library(vip)
+library(naniar)
+library(glue)
+
+#
+# Missing data: 
+# childcare_costs |> 
+#   slice_sample(n = 500) |> 
+#   vis_miss()
+
+
+get_cors <- function(df, out_var) {
+  outcome <- as.numeric(df[[out_var]])
+
+  df[, names(df) != out_var] |> 
+    select(where(is.numeric)) |> 
+    map(cor.test, y = outcome) |> 
+    map_dfr(tidy, .id = "predictor") |> 
+    arrange(estimate)
+}
+
+plot_cors <- function(df, out_var, size = 12) {
+  
+    get_cors(df, out_var) |> 
+    ggplot(aes(x = fct_reorder(predictor, estimate))) + 
+    geom_point(aes(y = estimate)) + 
+    geom_errorbar(
+      aes(ymin = conf.low, ymax = conf.high), 
+      width = .1
+    ) +
+    geom_hline(yintercept = 0, linetype = "dashed") +
+    labs(x = NULL, y = glue("Correlation with {out_var}")) + 
+    coord_flip() + 
+    theme(axis.text.y = element_text(size = size))
+}
+
+collect_custom_metrics <- function(
+    res, truth, estimate = .pred, 
+    cust_metrics = metric_set(rmse, rsq, mae, cc)
+    ) {
+  
+  # Calculate metrics
+  res |> 
+  cust_metrics(
+      truth = {{ truth }},
+      estimate = {{ estimate }}
+    )
+}
+
+  # last_fit |> 
+#   collect_predictions() |> 
+#   collect_custom_metrics(imdb_rating, .pred)
+#   
+
+
+plot_performance <- function(res, truth, estimate = .pred) {
+  
+  res |> 
+    ggplot(aes({{ truth }}, {{ estimate }})) + 
+    geom_point() + 
+    geom_abline(color = "blue", linetype = "dashed") + 
+    coord_obs_pred()
+}
+
+
+# last_fit |> 
+#   collect_predictions() |> 
+#   plot_performance(imdb_rating, .pred)
+
+
+
+
+```
+
+```{r}
 #| label: setup
 #| warning: false
 #| echo: true
 
-rm(list = ls())
-library(here)
-source(here("bin", "lib.R"))
+# rm(list = ls())
+# library(here)
+# source(here("bin", "lib.R"))
 
 # load data here
 df <- read_csv(
